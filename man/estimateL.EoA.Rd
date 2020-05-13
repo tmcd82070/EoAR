@@ -3,10 +3,16 @@
 \name{estimateL.EoA}
 \alias{estimateL.EoA}
 \title{estimateL.EoA - Estimate rate parameter Lambda for
-a single-site using the EoA method}
+a single-site using the classic EoA method}
 \usage{
-estimateL.EoA(X, beta.params, Lprior = "jeffreys", Lprior.mean = NULL,
-  Lprior.sd = NULL, conf.level = 0.9)
+estimateL.EoA(
+  X,
+  beta.params,
+  Lprior = "jeffreys",
+  Lprior.mean = NULL,
+  Lprior.sd = NULL,
+  conf.level = 0.9
+)
 }
 \arguments{
 \item{X}{Total number of search targets found at all searched sites during the
@@ -49,7 +55,9 @@ frame containing the lambda estiamtes (point estimate and confidence interval).
 This routine computes lambda, the mean number of search targets
 out there per season,
 using information from the number of found targets and the g-value (=probatility of
-discovery).  The method is Bayesian and allows either an uniform prior for lambda
+discovery).  This differs from the \code{eoar()} function in that
+this routine does not allow covariates (mean model only).
+The method is Bayesian and allows either an uniform prior for lambda
 or an informed prior.
 Estimation is direct in the sense that this routine uses numerical
 integration to compute the posterior of lambda.
@@ -72,5 +80,11 @@ plot(ieoa$L.posterior$L, ieoa$L.posterior$pdf, type="l")
 lines(ieoa$L.posterior$L, ieoa$L.posterior$like.pdf, col="red")
 lines(ieoa$L.posterior$L, ieoa$L.posterior$prior.pdf, col="blue")
 legend("topright", legend=c("prior","likelihood","posterior"), col=c("blue","red","black"), lty=1)
+
+# to check that integral is correct.
+flike <- function(x, est){
+  approx(est$L.posterior$L, est$L.posterior$like.pdf,xout=x, rule=2)$y
+  }
+integrate( flike, min(ieoa$L.posterior$L), max(ieoa$L.posterior$L), est=ieoa)
 
 }

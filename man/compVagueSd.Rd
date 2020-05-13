@@ -17,7 +17,7 @@ of targets found per season.}
 
 \item{X}{a design matrix upon which an approximation of inflated
 numbers of targets is regressed.  Usually, this is meant to be the
-design matrix from the \code{eoa} function.}
+design matrix from the \code{eoar} function.}
 
 \item{range.multiplier}{a multipiler for the range of coefficient
 estimates to make the output standard deviations sufficiently vague.

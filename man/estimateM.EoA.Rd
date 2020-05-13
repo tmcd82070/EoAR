@@ -2,10 +2,16 @@
 % Please edit documentation in R/estimateM.EoA.R
 \name{estimateM.EoA}
 \alias{estimateM.EoA}
-\title{estimateM.EoA}
+\title{estimateM.EoA - Estimate mortalities using a classic EoA model.}
 \usage{
-estimateM.EoA(X, beta.params, Mprior = "objective", Mprior.mean,
-  Mprior.sd, conf.level = 0.9)
+estimateM.EoA(
+  X,
+  beta.params,
+  Mprior = "objective",
+  Mprior.mean,
+  Mprior.sd,
+  conf.level = 0.9
+)
 }
 \arguments{
 \item{X}{Total number of carcasses found.}
@@ -85,8 +91,9 @@ List containing the following components.
 }
 \description{
 Estimate single-site or multiple-class M (=mortalities)
-parameter of Evidence of Absence (EoA)
-using objective or informed priors.
+parameter of a classic Evidence of Absence (EoA)
+using objective or informed priors.  This routine differs from
+function \code{eoar} in that this routine does not allow covariates.
 }
 \details{
 This routine replicates the M estimates of the 'Single Year' and

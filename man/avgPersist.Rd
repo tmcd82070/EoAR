@@ -41,7 +41,7 @@ avgPersist(c(0,15,30),"weibull",0.57792,7.1683)
 
 }
 \seealso{
-\code{\link{eoa}}
+\code{\link{eoar}}
 }
 \author{
 Trent McDonald

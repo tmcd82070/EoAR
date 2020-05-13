@@ -2,12 +2,13 @@
 % Please edit documentation in R/print.eoa.r
 \name{print.eoa}
 \alias{print.eoa}
-\title{Print a Evidence of Absence model}
+\alias{print.eoar}
+\title{print.eoar - Print a Evidence of Absence Regression model}
 \usage{
-\method{print}{eoa}(x, ...)
+\method{print}{eoar}(x, ...)
 }
 \arguments{
-\item{x}{An estimated eoa object from \code{eoa}.}
+\item{x}{An estimated eoar object from \code{eoar}.}
 
 \item{\dots}{Included for compatibility with other print methods.  Ignored here.}
 }
@@ -15,14 +16,14 @@
 The input value of \code{obj} is invisibly returned.
 }
 \description{
-Print method for EoA models produced by \code{eoa},
-which are of class \code{eoa}.
+Print method for EoAR models produced by \code{eoar},
+which are of class \code{eoar}.
 }
 \examples{
 
 }
 \seealso{
-\code{\link{summary.eoa}}
+\code{\link{summary.eoar}}
 }
 \author{
 Trent McDonald, WEST Inc. \email{tmcdonald@west-inc.com}

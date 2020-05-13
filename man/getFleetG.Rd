@@ -4,8 +4,12 @@
 \alias{getFleetG}
 \title{getFleetG - Compute all-site (fleetwide) Evidence of Absence g-value.}
 \usage{
-getFleetG(siteYearResults, species = "LBBA", weights = NULL,
-  yearWeights = NULL)
+getFleetG(
+  siteYearResults,
+  species = "LBBA",
+  weights = NULL,
+  yearWeights = NULL
+)
 }
 \arguments{
 \item{siteYearResults}{A data frame containing site-season results.

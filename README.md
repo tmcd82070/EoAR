@@ -9,21 +9,65 @@ the **Evidence of Absence (EoA)** model of Huso et al. (2015) and the
 
 ## How to git it:
 
-From GitHub, issue the following 
+To obtain a local copy of the source, download it from GitHub using the following 
 commands in a git shell: 
 ```
 cd <directory you want>  
 git clone https://github.com/tmcd82070/eoar.git  
 ```
+
 The above commands will download all source from GitHub to your computer.  
 Among other things, 
 you should see a `DESCRIPTION` file and `R` directory.  
 
+**You do not need a local copy** unless you plan to edit the code.  If you 
+simply want to run `EoAR`, use the 'devtools and GitHub' installation method below. 
+
+
 ## Intalling:
 
-#### Using `devtools`
+`EoAR` depends on `rjags`.  It is best to install `rjags` prior to 
+atempting install of `EoAR`.  Prior to attempting installation of 
+`rjags`, it is best to install JAGS.  If you already have the 
+JAGS runtime on your machine, skip this step and install 
+`rjags` immediately. 
 
-Open R and `setwd()` to the directory containing the `DESCRIPTION` file. In R issue the following:
+### Install JAGS run time
+
+To install the JAGS 
+runtime, navigate here: 
+`http://www.sourceforge.net/projects/mcmc-jags/files`, and 
+download the JAGS installer. Execute it and accept all defaults. 
+
+### Install `rjags`
+Issue the following command in R:
+```
+install.packages("rjags")
+```
+
+You have JAGS and `rjags` installed properly if you attach `rjags` and 
+do not get an error message.  I.e., something like the following:
+```
+> library(rjags)
+Loading required package: coda
+Linked to JAGS 4.3.0
+Loaded modules: basemod,bugs
+```
+
+### Install `EoAR`
+
+#### Using `devtools` and GitHub
+
+You can install the latest release of `EoAR` directly from GitHub without 
+obtaining a local copy.  Issue the following command:
+```
+devtools::install_github("tmcd82070/EoAR.git")
+```
+
+#### Using `devtools` and local repository
+
+If you cloned the `EoAR` repository, you have a local copy of the source on your
+hard drive.  Open R and `setwd()` to the directory containing the `DESCRIPTION` file. In R issue the following:
 ```
 library(devtools)  
 document()  
