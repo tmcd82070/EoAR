@@ -1,22 +1,22 @@
 #' @title predict.eoa
 #'
-#' @description Prediction method for eoa objects.
+#' @description Prediction method for eoar objects.
 #'
-#' @param object an eoa object produced by function \code{eoa}
+#' @param object an eoar object produced by function \code{eoar}
 #'
 #' @param newdata A data frame containing new covariate
 #' values at which to do the prediction.
 #'
 #' @param type Text string specifying the type of prediction.
 #' \itemize{
-#'   \item \code{"response"} returns the predicted value of the eoa rate parameter,
+#'   \item \code{"response"} returns the predicted value of the eoar rate parameter,
 #' lambda, evaluated using the median coefficient estimates
 #' in \code{object}. \code{"response"}
 #' evaluates the model using \code{object$estimates[object$coef.labels]}
 #' (or \code{coef(object)}) as coefficients, and returns the result after
 #' taking the anti-log (exp()).
 #'   \item \code{"quantile"} returns a quantile from the distribution of
-#'   the eoa rate parameter, lambda, evaluated using all the posterior samples
+#'   the eoar rate parameter, lambda, evaluated using all the posterior samples
 #'   of the coefficients.  \code{"quantile"} evaluates the model using
 #'   all posterior samples of the coefficients housed in \code{object$out},
 #'   and returns the \code{p}-th quantile(s) from the distribution of
@@ -39,7 +39,7 @@
 #' @author Trent McDonald
 #'
 #' @export
-predict.eoa <- function(object, newdata, type="response", p=c(0.025,0.5,0.975), ...){
+predict.eoar <- function(object, newdata, type="response", p=c(0.025,0.5,0.975), ...){
 
   X <- model.matrix(object, newdata)
   if(type=="response"){

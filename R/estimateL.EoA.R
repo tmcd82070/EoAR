@@ -1,10 +1,12 @@
 #' @title estimateL.EoA - Estimate rate parameter Lambda for
-#' a single-site using the EoA method
+#' a single-site using the classic EoA method
 #'
 #' @description This routine computes lambda, the mean number of search targets
 #' out there per season,
 #' using information from the number of found targets and the g-value (=probatility of
-#' discovery).  The method is Bayesian and allows either an uniform prior for lambda
+#' discovery).  This differs from the \code{eoar()} function in that
+#' this routine does not allow covariates (mean model only).
+#' The method is Bayesian and allows either an uniform prior for lambda
 #' or an informed prior.
 #' Estimation is direct in the sense that this routine uses numerical
 #' integration to compute the posterior of lambda.

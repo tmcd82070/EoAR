@@ -1,17 +1,17 @@
 #' @export
 #'
-#' @title coef.eoa - Coefficient extractor for EoA models.
+#' @title coef.eoar - Coefficient extractor for EoAR models.
 #'
 #' @description Extracts the log-linear model coefficients from an
-#' \code{eoa} model object.  See \code{\link{eoa}}.
+#' \code{eoar} model object.  See \code{\link{eoar}}.
 #'
-#' @param obj An object of class \code{eoa}.
+#' @param obj An object of class \code{eoar}.
 #'
 #' @return Estimates of the log-linear model's coefficients.
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{eoa}}, \code{\link{labels.eoa}}
+#' @seealso \code{\link{eoar}}, \code{\link{labels.eoar}}
 #'
 #' @examples
 #' # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
@@ -28,10 +28,10 @@
 #' df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 #'    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))
 #'
-#' # Uninformed eoa (use low number of iterations because it's and example)
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
+#' # Uninformed eoar (use low number of iterations because it's and example)
+#' eoar.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
-#' coef(eoa.1)
-coef.eoa <- function(obj){
+#' coef(eoar.1)
+coef.eoar <- function(obj){
   obj$estimates[obj$coef.labels,"Estimate"]
 }

@@ -16,7 +16,7 @@
 #'
 #' @param X a design matrix upon which an approximation of inflated
 #' numbers of targets is regressed.  Usually, this is meant to be the
-#' design matrix from the \code{eoa} function.
+#' design matrix from the \code{eoar} function.
 #'
 #' @param range.multiplier a multipiler for the range of coefficient
 #' estimates to make the output standard deviations sufficiently vague.
@@ -63,5 +63,4 @@ compVagueSd<- function(Y,alpha.vec,beta.vec,X, range.multiplier=100){
 }
 
 
-#tmp <- compVagueSd(Y, g$alpha, g$beta, eoa$design.mat)
 

@@ -1,16 +1,16 @@
 #' @export
 #'
-#' @title summary.eoa - summary method for EoA objects
+#' @title summary.eoar - summary method for EoAR objects
 #'
-#' @description Summarizes an EoA model object output by \code{eoa()}.
+#' @description Summarizes an EoAR model object output by \code{eoar()}.
 #'
-#' @param obj An object of class \code{eoa}.  See function \code{\link{eoa}}.
+#' @param obj An object of class \code{eoar}.  See function \code{\link{eoar}}.
 #'
 #' @return NULL.  This function prints a summary of the model on screen.
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{eoa}}, \code{\link{coef.eoa}}.
+#' @seealso \code{\link{eoar}}, \code{\link{coef.eoar}}.
 #'
 #'
 #' @examples
@@ -28,12 +28,12 @@
 #' df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 #'    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))
 #'
-#' # Uninformed eoa (use low number of iterations because it's and example)
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
+#' # Uninformed eoar (use low number of iterations because it's and example)
+#' eoa.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
 #' summary(eoa.1)
 #'
-summary.eoa <- function(obj){
+summary.eoar <- function(obj){
 
   cat("Call:\n")
   print(obj$call)

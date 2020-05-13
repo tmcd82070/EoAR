@@ -1,11 +1,11 @@
 #' @export
 #'
-#' @title Plot rate estimates from an \code{eoa} model
+#' @title plot.eoar - Plot rate estimates from an \code{eoar} model
 #'
-#' @description Plot method for \code{eoa} objects.
+#' @description Plot method for \code{eoar} objects.
 #'
-#' @param obj An object of class "eoa".  Usually output by the
-#' routine \code{eoa}.
+#' @param obj An object of class "eoar".  Usually output by the
+#' routine \code{eoar}.
 #'
 #' @param xvar The x-axis variable to plot.  Points in the plot
 #' are carcasses/g/numTurbines ~ xvar and line in plot is lambda ~ xvar.
@@ -20,7 +20,7 @@
 #' @seealso \code{\link{plot.Mest}}
 #'
 #'
-plot.eoa <- function(obj, xvar=NULL, main=NULL){
+plot.eoar <- function(obj, xvar=NULL, main=NULL){
 
   if(is.null(xvar)){
     # xaxis is first variable after intercept in design mat

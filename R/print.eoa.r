@@ -1,24 +1,24 @@
 #' @name print.eoa
 #'
-#' @title Print a Evidence of Absence model
+#' @title print.eoar - Print a Evidence of Absence Regression model
 #'
-#' @description Print method for EoA models produced by \code{eoa},
-#' which are of class \code{eoa}.
+#' @description Print method for EoAR models produced by \code{eoar},
+#' which are of class \code{eoar}.
 #'
-#' @param x An estimated eoa object from \code{eoa}.
+#' @param x An estimated eoar object from \code{eoar}.
 #'
 #' @param \dots Included for compatibility with other print methods.  Ignored here.
 #'
 #' @return The input value of \code{obj} is invisibly returned.
 #' @author Trent McDonald, WEST Inc. \email{tmcdonald@west-inc.com}
 #'
-#' @seealso \code{\link{summary.eoa}}
+#' @seealso \code{\link{summary.eoar}}
 #' @examples
 #'
 #' @keywords models
 #' @export
 
-print.eoa <- function( x, ... ){
+print.eoar <- function( x, ... ){
 
   summary(x)
 

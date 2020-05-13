@@ -24,18 +24,19 @@ you should see a `DESCRIPTION` file and `R` directory.
 #### Using `devtools`
 
 Open R and `setwd()` to the directory containing the `DESCRIPTION` file. In R issue the following:
-
-`library(devtools)`  
-`document()`  
-`install()`   
+```
+library(devtools)  
+document()  
+install()   
+```
 
 #### Manual install
 
 Open a command window, change directory to the folder containing `DESCRIPTION` and issue 
 the following command: 
-
-`r CMD INSTALL EoAR`
-
+```
+r CMD INSTALL EoAR
+```
 
 ## To Contribute
 

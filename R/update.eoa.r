@@ -1,10 +1,10 @@
 #' @export
 #'
-#' @title update.eoa - Update method for EoA objects
+#' @title update.eoar - Update method for EoAR objects
 #'
-#' @description Update (run more iterations of) an EoA model object output by \code{eoa()}.
+#' @description Update (run more iterations of) an EoAR model object output by \code{eoar()}.
 #'
-#' @param obj An object of class \code{eoa}.  See function \code{\link{eoa}}.
+#' @param obj An object of class \code{eoar}.  See function \code{\link{eoar}}.
 #'
 #' @param nburns Number of additional iterations to burn.
 #'
@@ -17,11 +17,11 @@
 #' \code{niters/nthin} kept iterations will overwrite the previous iterations,
 #' effectively increasing the burn-in period of the MCMC model.
 #'
-#' @return An \code{eoa} model object.  See \code{\link{eoa}}
+#' @return An \code{eoar} model object.  See \code{\link{eoar}}
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{eoa}}, \code{\link{coef.eoa}}.
+#' @seealso \code{\link{eoar}}, \code{\link{coef.eoar}}.
 #'
 #'
 #' @examples
@@ -39,16 +39,16 @@
 #' df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 #'    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))
 #'
-#' # Uninformed eoa (use low number of iterations because it's and example)
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
+#' # Uninformed eoar (use low number of iterations because it's and example)
+#' eoa.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
 #' # Could do this if eoa.1 did not converge
-#' #  1) Consider everything in eoa.1 burn-in. (nadapt+nburn+niters iterations)
+#' #  1) Consider everything in eoa.1 to be burn-in. (nadapt+nburn+niters iterations)
 #' #  2) Burn another 1000 iterations, then sample 1000 taking every 10th
 #' eoa.2 <- update(eoa.1, nburns=1000, niters=1000, nthin=10)
 #'
 #' # Could do the following if eoa.1 converged, but autocorrelation was high.
-#' #  1) Consider everything in eoa.1 burn-in. (nadapt+nburn+niters iterations)
+#' #  1) Consider everything in eoa.1 to be burn-in. (nadapt+nburn+niters iterations)
 #' #  2) Do another 1000 iterations with higher thinning
 #' eoa.2 <- update(eoa.1, nburns=0, niters=1000, nthin=50)
 #'
@@ -58,7 +58,7 @@
 #' #  2) Add another 1000 iterations with same (or different) thinning
 #' eoa.2 <- update(eoa.1, nburns=0, niters=1000, nthin=50, add=TRUE)
 #'
-update.eoa <- function(obj, niters, nburns=0, nthins=1, add=FALSE, quiet=FALSE){
+update.eoar <- function(obj, niters, nburns=0, nthins=1, add=FALSE, quiet=FALSE){
 
   stop("This update routine does not work yet. Needs to be converted to runjags.\n")
 

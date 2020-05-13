@@ -30,7 +30,7 @@
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{eoa}}
+#' @seealso \code{\link{eoar}}
 #'
 #' @examples
 #' avgPersist(c(0,15,30),"exponential",scale=8.6251)

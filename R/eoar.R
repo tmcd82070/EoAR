@@ -1,26 +1,31 @@
 #' @export
 #'
-#' @title eoa - Evidence of Absence model estimation.
+#' @title eoar - Evidence of Absence Regression model estimation.
 #'
-#' @description  This routine estimates an EoA model.  An EoA model
-#' consists of a log-linear for lambda, the mean number of search targets per "cell", where
-#' "cell" could be a turbine, season, year, etc.  Inputs include
+#' @description  This routine estimates an EoAR model.  An EoAR model
+#' consists of a log-linear model for lambda, the mean number of search
+#' targets per "cell", where
+#' "cell" is a measured experimental unit such as a turbine, season, year, etc.
+#' Inputs include
 #' information about the number of targets found (\code{Y}) and the
 #' g-values (=probatility of
 #' discovery) at all
 #' searched sites.  The method is Bayesian and allows either an uniform prior for lambda
 #' or an informed prior.
-#' Estimation is performed using JAGS.
+#' Estimation is performed in JAGS.
 #'
-#' @param lambda A model formula for the lambda parameters of EoA.
+#' @param lambda A model formula for the lambda parameters of EoAR.
 #' This formulat has the form \code{Y ~ X1 + X2} + etc. (exactly like \code{\link{lm}}).
-#' Here,  \code{Y} is a Vector of number of carcasses found, one element per "cell". For example, if
-#' multiple sites are searched in a single season, elements of Y are the number
+#' Here,  \code{Y} is a vector containing number of carcasses found, one element per "cell".
+#' For example, if
+#' multiple sites are searched in a single season, elements of Y should be the number
 #' of targets found at each site.  If multiple sites are searched during multiple seasons,
-#' \code{Y} contains number of targets found each site X season combination (length
-#' of \code{Y} is number of sites times number of seasons, assuming no missing).  Covariate
+#' \code{Y} should contain the number of targets found at each site X season
+#' combination.  Length
+#' of \code{Y} is number of sites times number of seasons, assuming no missing.  Covariate
 #' vectors (or matricies) \code{X1} etc. must have the same length as \code{Y} and
-#' can be anything that \code{formula} handles (e.g., factors, interactions, \code{I(x^2)}, etc.)
+#' can be anything that \code{formula} handles (e.g., factors, interactions,
+#' \code{I(x^2)}, etc.)
 #'
 #' @param beta.params A data frame containing, at a minimum, two columns named \code{$alpha}
 #' and \code{$beta}.
@@ -32,17 +37,18 @@
 #'
 #' @param data An optional data frame, list or environment
 #' (or object coercible by \code{as.data.frame} to a data frame)
-#' containing the variables in the model. If variables are not found in data,
+#' containing all variables in the model. If variables are not found in data,
 #' the variables are taken from environment(formula), typically the
-#' environment from which \code{eoa} is called.
+#' environment from which \code{eoar} is called.
 #'
-#' @param offset An optional offset term(s) for the liner part of the model.
+#' @param offset An optional offset term(s) for the linear part of the model.
 #' This should be NULL or a numeric vector of length equal to the number
-#' of "cells". One or more offset terms can be included in the formula instead
-#' or as well (e.g., Y~ offset(log(a))+X), and if more than one is specified
+#' of "cells". One or more offset terms can be included in the formula
+#' (e.g., Y~ offset(log(a))+X), and if more than one is specified
 #' their sum is used. See \code{\link{model.offset}}.  Due to the log link
 #' used here, offsets should generally be logged first. When the log of an offset
-#' is included, the linear part of the model is log(lambda/offset) ~ X1 + x2 + ...etc.
+#' is included, the linear part of the model can be read as
+#' log(lambda/offset) ~ X1 + x2 + ...etc.
 #'
 #' @param priors An optional data frame specifying vague priors or
 #' containing information
@@ -125,7 +131,7 @@
 #' This derived parameters may not mean anything in specific problems, but is
 #' a fairly common derived parameter.
 #'
-#' The EoA model implemented here is :
+#' The EoAR model implemented here is :
 #' \enumerate{
 #'   \item Target count Y[i] is assumed to be binomial(M[i],g[i]).
 #'   \item Binomial index M[i] is assumed to be poisson(lambda[i]).
@@ -142,12 +148,12 @@
 #' \code{seeds} here. This will set
 #' the MCMC seeds in JAGS so that exact chains are reproduced.
 #' For example, if \code{run1} is the
-#' result of a previous call, \code{eoa(...,seeds=run1$seeds)}
+#' result of a previous call, \code{eoar(...,seeds=run1$seeds)}
 #' will replicate \code{run1} exactly.
 #' The second method is to use R's default \code{set.seed}
 #' just before calling this routine.
 #'
-#' @return An object of class "eoa".  Eoa objects are a lists containing the following components:
+#' @return An object of class "eoar".  EoAR objects are lists containing the following components:
 #' \itemize{
 #'   \item \code{estimates} : a matrix containing parameter estimates and
 #'   standard errors.  This matrix contains  one row per parameter and
@@ -205,8 +211,8 @@
 #'
 #'   \item \code{coef.labels} : character vector containing the labels of coefficients
 #'   in the model.  This is used to distinguish coefficients from derived parameters.
-#'   All parameters in \code{ests} not listed here are considered derived. See \code{\link{labels.eoa}},
-#'   and \code{\link{coef.eoa}}.
+#'   All parameters in \code{ests} not listed here are considered derived. See \code{\link{labels.eoar}},
+#'   and \code{\link{coef.eoar}}.
 #'
 #'   \item \code{call} : the call that invoked this function.
 #'
@@ -242,8 +248,8 @@
 #' @author Trent McDonald
 #'
 #'
-#' @seealso \code{\link{labels.eoa}}, \code{\link{coef.eoa}},
-#' \code{\link{predict.eoa}}, \code{\link{model.matrix.eoa}}
+#' @seealso \code{\link{labels.eoar}}, \code{\link{coef.eoar}},
+#' \code{\link{predict.eoar}}, \code{\link{model.matrix.eoar}}
 #'
 #' @examples
 #' # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
@@ -260,47 +266,47 @@
 #' df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 #'    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))
 #'
-#' # Uninformed eoa (use low number of iterations because it's and example)
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
+#' # Uninformed eoar (use low number of iterations because it's and example)
+#' eoar.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
 #' # Repeat and get exact same answers
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10, seeds=eoa.1$seeds )
+#' eoar.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10, seeds=eoar.1$seeds )
 #'
-#' # Run Informed EoA.  Assume prior annual lambda estimates
+#' # Run Informed EoAR.  Assume prior annual lambda estimates
 #' # are 10, 15, and 20, all with sd=.5.
 #' prior <- data.frame(mean=c(log(10),log(15/10),log(20/10)),
 #'   sd=c(0.5,0.5,0.5))
 #' row.names(prior) <- c("(Intercept)","year2016","year2017")
 #'
-#' ieoa <- eoa(Y~year, g, df, priors=prior, nburn = 1000, niters= 50*10, nthins = 10 )
+#' ieoar <- eoar(Y~year, g, df, priors=prior, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
 #' # The above chains do not converge due to the low number of iterations used here.
 #' # To check convergence and autocorrelation
 #'
-#' gelman.diag(ieoa$out) # gelmanStats
-#' gelman.plot(ieoa$out) # gelmanPlot
+#' gelman.diag(ieoar$out) # gelmanStats
+#' gelman.plot(ieoar$out) # gelmanPlot
 #'
 #' # Nice traceplots
 #' library(lattice)
-#' plot(ieoa$out) # tracePlot, all parameters
-#' xyplot(ieoa$out[,c("(Intercept)","year2016","year2017")]) # nicer trace of coefficients
+#' plot(ieoar$out) # tracePlot, all parameters
+#' xyplot(ieoar$out[,c("(Intercept)","year2016","year2017")]) # nicer trace of coefficients
 #'
 #' # Autocorrelation functions
-#' acfplot(ieoa$out[,c("(Intercept)","year2016","year2017")], ylim=c(-.2,1), lag.max=300)
-#' acfplot(ieoa$out[,c("(Intercept)","year2016","year2017")], ylim=c(-.2,1), thin=2)
+#' acfplot(ieoar$out[,c("(Intercept)","year2016","year2017")], ylim=c(-.2,1), lag.max=300)
+#' acfplot(ieoar$out[,c("(Intercept)","year2016","year2017")], ylim=c(-.2,1), thin=2)
 #'
 #' # Density plots
-#' densityplot(ieoa$out[,c("(Intercept)","year2016","year2017")])
-#' densityplot(ieoa$out[,c("lambda[1]","lambda[8]","lambda[15]")]) # Mean lambda each year
+#' densityplot(ieoar$out[,c("(Intercept)","year2016","year2017")])
+#' densityplot(ieoar$out[,c("lambda[1]","lambda[8]","lambda[15]")]) # Mean lambda each year
 #'
 #' # Correlation among coefficients
-#' levelplot(ieoa$out[,c("(Intercept)","year2016","year2017")][[1]])
+#' levelplot(ieoar$out[,c("(Intercept)","year2016","year2017")][[1]])
 #'
 #' # QQ plots
-#' qqmath(ieoa$out[,c("(Intercept)","year2016","year2017")])
+#' qqmath(ieoar$out[,c("(Intercept)","year2016","year2017")])
 #'
 #'
-eoa <- function(lambda, beta.params, data, offset,
+eoar <- function(lambda, beta.params, data, offset,
                 priors=NULL,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
@@ -546,7 +552,7 @@ eoa <- function(lambda, beta.params, data, offset,
     terms = mt
   )
 
-  class(ans) <- "eoa"
+  class(ans) <- "eoar"
   ans
 
 }

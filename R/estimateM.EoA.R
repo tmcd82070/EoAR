@@ -1,10 +1,11 @@
 #' @export
 #'
-#' @title estimateM.EoA
+#' @title estimateM.EoA - Estimate mortalities using a classic EoA model.
 #'
 #' @description  Estimate single-site or multiple-class M (=mortalities)
-#' parameter of Evidence of Absence (EoA)
-#' using objective or informed priors.
+#' parameter of a classic Evidence of Absence (EoA)
+#' using objective or informed priors.  This routine differs from
+#' function \code{eoar} in that this routine does not allow covariates.
 #'
 #' @param X Total number of carcasses found.
 #'

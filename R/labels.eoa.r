@@ -1,8 +1,8 @@
 #' @export
 #'
-#' @title labels.eoa - Extract parameter labels from \code{eoa} objects.
+#' @title labels.eoar - Extract parameter labels from \code{eoar} objects.
 #'
-#' @param obj An \code{eoa} model object.  See \code{\link{eoa}}.
+#' @param obj An \code{eoar} model object.  See \code{\link{eoar}}.
 #'
 #' @param type The type of parameter label requred or a regular expression.
 #' Parameter type possibilities are "coef" or
@@ -16,7 +16,7 @@
 #'
 #' @author Trent McDonald
 #'
-#' @seealso \code{\link{coef}}, \code{\link{eoa}}
+#' @seealso \code{\link{coef}}, \code{\link{eoar}}
 #'
 #' @examples
 #' # A 3 year study of 7 sites. 21 "cells". lambda change = 20/year
@@ -33,18 +33,18 @@
 #' df <- data.frame(year=factor(c(rep("2015",ny),rep("2016",ny),rep("2017",ny))),
 #'    Year=c(rep(1,ny),rep(2,ny),rep(3,ny)))
 #'
-#' # Uninformed eoa (use low number of iterations because it's and example)
-#' eoa.1 <- eoa(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
+#' # Uninformed eoar (use low number of iterations because it's and example)
+#' eoar.1 <- eoar(Y~year, g, df, nburn = 1000, niters= 50*10, nthins = 10 )
 #'
-#' labels(eoa.1)
-#' labels(eoa.1,"derived")
-#' labels(eoa.1,"^M")  # all M parameters
-#' labels(eoa.1,"\\[3\\]$") # M[3] and lambda[3]
-#' labels(eoa.1,".") # all parameter labels
+#' labels(eoar.1)
+#' labels(eoar.1,"derived")
+#' labels(eoar.1,"^M")  # all M parameters
+#' labels(eoar.1,"\\[3\\]$") # M[3] and lambda[3]
+#' labels(eoar.1,".") # all parameter labels
 #'
-#' plot(eoa.1$out[,labels(eoa.1)])  # trace plot of coefficients.
+#' plot(eoar.1$out[,labels(eoa.1)])  # trace plot of coefficients.
 #'
-labels.eoa <- function(obj, type="coef"){
+labels.eoar <- function(obj, type="coef"){
 
   if(type=="coef"){
     ans <- obj$coef.labels
