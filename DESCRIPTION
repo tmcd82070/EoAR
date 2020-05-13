@@ -1,14 +1,13 @@
-Package: evoab
+Package: EoAR
 Type: Package
-Title: Evidence of Absence (EoA)
-Version: 0.1.0
+Title: Evidence of Absence Regression (EoAR)
+Version: 0.1.1
 Author: Trent McDonald
 Maintainer: Trent McDonald <tmcdonald@west-inc.com>
 Description: Routines for estimating number of missed entities after a series of
-    searches. Implements the "evidence of absence" model of Huso et al. (2015) Often
-    used to estimate true number of carcassess on a wind power facility's grounds
-    after field searches.
-License: GPL-2
+    searches. Adds a regression component to the "evidence of absence" model of Huso et al. (2015).
+    Accompanies a manuscript of the same name.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
