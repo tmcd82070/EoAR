@@ -1,5 +1,5 @@
 ---
-title: "EoAR with Zeros"
+title: "EoAR With Zeros And Offsets"
 author: "Trent McDonald"
 date: "`r Sys.Date()`"
 output:
@@ -11,10 +11,8 @@ editor_options:
   chunk_output_type: inline
 ---
 
-In this vignette, I demonstrate the that EoAR models 
-give the same mortality estimate regardless of the 
-number of zero sites included. In other words, that EoAR 
-naturally accomodates for a large numbers of zeros. 
+In this vignette, I demonstrate EoAR models fitted 
+to no targets, but I include an offset. 
 
 My example 
 data is the bat mortality dataset from the EoAR manuscript.
@@ -25,7 +23,7 @@ library(EoAR)
 data("batMortData", package="EoAR")
 batMortData <- batMortData %>%
   mutate(NLBA = 0) # no carcasses found
-set.seed(3382001)
+set.seed(82001)
 #knitr::kable(batMortData)
 ```
 
@@ -45,23 +43,16 @@ gParams <- EoAR::mixtureBeta(
 gParams$alpha <- gParams$alpha / 1000
 gParams$beta <- gParams$beta / 1000
 gParams
-
-plot(seq(.001,.2,length=500), dbeta(seq(.001,.2,length=500), gParams$alpha, gParams$beta), type = "l", ylab="Density of g", xlab="g")
 ```
 
-
-# One Site
-
-The following EoAR model sums zeros over all sites and averages
-$g$'s. Effectively, the EoAR model uses one site and one data point. 
-
-
+# One Site, One Turbine
 
 ```{r oneZero}
 # Input dataset
-zeroData <- batMortData %>% 
-  summarize(NLBA = sum(NLBA),
-            Turbines = sum(Turbines))
+zeroData <- data.frame(
+  NLBA = rep(0,1),
+  Turbines = 2000
+)
 
 fit <- EoAR::eoar(NLBA ~ 1,
                        beta.params = gParams, 
@@ -73,155 +64,122 @@ fit <- EoAR::eoar(NLBA ~ 1,
                        nthins = 100,
                        nchains = 3,
                        quiet = TRUE)
-oneZero <- data.frame(
-  nSites = 1,
-  offset = "no offset",
+r1 <- data.frame(
+  nSites = nrow(zeroData),
+  offset = 1,
   model = paste("Y ~",as.character(fit$call$lambda)[3]), 
   mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
   mMean = mean(unlist(fit$out[,"Mtot"])),
-  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
-  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+  lambdaMean = mean(unlist(fit$out[,"lambda"]))
 )
 
 summary(fit)
-oneZero
-```
-# Two Sites
 
-```{r twoZeros}
+```
+
+# One Site, 2000 Turbines
+
+```{r oneZeroWithOffset}
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+r2 <- data.frame(
+  nSites = nrow(zeroData),
+  offset = zeroData$Turbines,
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  lambdaMean = mean(unlist(fit$out[,"lambda"]))
+)
+
+summary(fit)
+```
+
+# Five Sites Averaging 400 Turbines
+
+```{r fiveZeroWithOffset}
 # Input dataset
 zeroData <- data.frame(
-  NLBA = rep(0,2),
-  Turbines = rpois(2, 500)
+  NLBA = rep(0,4),
+  Turbines = rpois(4, 400)
 )
+zeroData <- zeroData %>% 
+  bind_rows(data.frame(NLBA = 0, Turbines = 2000 - sum(.$Turbines)))
+knitr::kable(zeroData)
 
 fit <- EoAR::eoar(NLBA ~ 1,
                        beta.params = gParams, 
                        data = zeroData, 
-                       offset = NULL, 
+                       offset = log(Turbines), 
                        nadapt = 10000, 
                        nburns = 50000,
                        niters = 50000, 
                        nthins = 100,
                        nchains = 3,
                        quiet = TRUE)
-twoZero <- data.frame(
-  nSites = 2,
-  offset = "no offset",
+r3 <- data.frame(
+  nSites = nrow(zeroData),
+  offset = mean(zeroData$Turbines),
   model = paste("Y ~",as.character(fit$call$lambda)[3]), 
   mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
   mMean = mean(unlist(fit$out[,"Mtot"])),
-  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
-  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+  lambdaMean = mean(unlist(fit$out[,"lambda[1]"]))
 )
 
 summary(fit)
-twoZero
 ```
 
-# Five Sites
-```{r fiveZeros}
+# Twenty Sites Averaging 100 Turbines
+
+```{r twentyZeroWithOffset}
 # Input dataset
 zeroData <- data.frame(
-  NLBA = rep(0,5),
-  Turbines = rpois(5, 500)
+  NLBA = rep(0,19),
+  Turbines = rpois(19, 2000/20)
 )
+zeroData <- zeroData %>% 
+  bind_rows(data.frame(NLBA = 0, Turbines = 2000 - sum(.$Turbines)))
+knitr::kable(zeroData)
 
 fit <- EoAR::eoar(NLBA ~ 1,
                        beta.params = gParams, 
                        data = zeroData, 
-                       offset = NULL, 
+                       offset = log(Turbines), 
                        nadapt = 10000, 
                        nburns = 50000,
                        niters = 50000, 
                        nthins = 100,
                        nchains = 3,
                        quiet = TRUE)
-fiveZero <- data.frame(
-  nSites = 5,
-  offset = "no offset",
+r4 <- data.frame(
+  nSites = nrow(zeroData),
+  offset = mean(zeroData$Turbines),
   model = paste("Y ~",as.character(fit$call$lambda)[3]), 
   mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
   mMean = mean(unlist(fit$out[,"Mtot"])),
-  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
-  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+  lambdaMean = mean(unlist(fit$out[,"lambda[1]"]))
 )
 
 summary(fit)
-fiveZero
-```
-
-# One Hundred Sites
-
-```{r hundredZeros}
-# Input dataset
-zeroData <- data.frame(
-  NLBA = rep(0,100),
-  Turbines = rpois(100, 500)
-)
-
-fit <- EoAR::eoar(NLBA ~ 1,
-                       beta.params = gParams, 
-                       data = zeroData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 3,
-                       quiet = TRUE)
-hundredZero <- data.frame(
-  nSites = 100,
-  offset = "no offset",
-  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
-  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
-  mMean = mean(unlist(fit$out[,"Mtot"])),
-  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
-  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
-)
-
-summary(fit)
-hundredZero
-```
-
-# Two Thousand Sites
-
-```{r twothousandZeros}
-# Input dataset
-zeroData <- data.frame(
-  NLBA = rep(0,2000),
-  Turbines = rpois(2000, 500)
-)
-
-fit <- EoAR::eoar(NLBA ~ 1,
-                       beta.params = gParams, 
-                       data = zeroData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 3,
-                       quiet = TRUE)
-twothousandZero <- data.frame(
-  nSites = 2000,
-  offset = "no offset",
-  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
-  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
-  mMean = mean(unlist(fit$out[,"Mtot"])),
-  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
-  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
-)
-
-summary(fit)
-twothousandZero
 ```
 
 
 
-# Final Comparison of Results
-```{r comparision}
-ans <- rbind(oneZero, twoZero, fiveZero, hundredZero, twothousandZero)
+# Final Table
 
+```{r}
+ans <- rbind(r1, r2, r3, r4)
+ans <- ans %>% 
+  mutate(lambdaScaled = lambdaMean * nSites * offset)
 knitr::kable(ans)
 ```
+
+
+Note that *lambdaMean* is mortalities per turbine per year, and is constant across rows with the same number of turbines.  Multiplying mortatlities per turbine by number of turbines is approximately the total number killed (i.e., *lambdaScaled* = $Mtot = T\lambda$ where $T$ = number of turbines). 
