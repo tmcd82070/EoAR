@@ -41,19 +41,34 @@ compVagueSd<- function(Y,alpha.vec,beta.vec,X, range.multiplier=100){
   M <- log(Y+m.c) - log(g + min(g)*m.c)
 
   lm.fit <- lm( M ~ -1+X )
-  if( sum(!is.na(lm.fit$coefficients)) != ncol(X) ){
-    stop("Multicolinearity in the model.")
+  if( any(is.na(lm.fit$coefficients)) ){
+    warning(paste("Multicolinearity in the vague SD model. Using",
+                  2*range.multiplier, "for all vague priors.",
+                  "You better check sensitivity of results to priors."))
+    coefSD <- rep(1, ncol(X))
+    beta <- rep(1, ncol(X))
+  } else {
+    lm.fit <- suppressWarnings(summary(lm.fit)$coefficients)
+    coefSD <- lm.fit[, "Std. Error"]
+    beta <- lm.fit[, "Estimate"]
   }
 
-  lm.fit <- summary(lm.fit)$coefficients
-
-  if( is.na(lm.fit[,"Std. Error"]) ){
+  if( any(is.na(coefSD)) ){
     # in absence of coef var estimate, seems reasonable to
     # assume a CV of 100%
-    lm.fit[,"Std. Error"] <- lm.fit[,"Estimate"]
+    ind <- is.na(coefSD)
+    coefSD[ind] <- abs(beta[ind])
   }
-  coef.range <- 2*lm.fit[,"Std. Error"]
-  coef.range <- coef.range * range.multiplier
+
+  # Impose a minimum vague sd.
+  # This fixes the case when Y is constant and g is constant, or,
+  # when any dimension has zero variance.
+  # This also means that 2*range.multiplier is the minimum
+  # vague prior.
+  CVs <- coefSD / beta
+  coefSD <- ifelse(CVs < 1.0, abs(beta), coefSD)
+
+  coef.range <- 2*coefSD * range.multiplier
 
   # names of coef.range must match coefficient names because
   # we use them to subset outside this routine.
