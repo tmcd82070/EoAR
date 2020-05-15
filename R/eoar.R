@@ -2,7 +2,7 @@
 #'
 #' @title eoar - Evidence of Absence Regression model estimation.
 #'
-#' @description  This routine estimates an EoAR model.  An EoAR model
+#' @description  An EoAR model
 #' consists of a log-linear model for lambda, the mean number of search
 #' targets per "cell", where
 #' "cell" is a measured experimental unit such as a turbine, season, year, etc.
@@ -10,8 +10,8 @@
 #' information about the number of targets found (\code{Y}) and the
 #' g-values (=probatility of
 #' discovery) at all
-#' searched sites.  The method is Bayesian and allows either an uniform prior for lambda
-#' or an informed prior.
+#' searched sites.  The method is Bayesian and allows either uniform
+#' or informed priors for lambda.
 #' Estimation is performed in JAGS.
 #'
 #' @param lambda A model formula for the lambda parameters of EoAR.
@@ -381,8 +381,12 @@ eoar <- function(lambda, beta.params, data, offset,
   }
 
   # Recall: tau of dnorm in JAGS is 1/variance
-  #print(coefTaus)
+  # cat("Prior mean and standard error:\n")
+  # cat(paste("mean =", coefMus, "\n"))
+  # cat(paste("sd   =", coefTaus, "\n"))
+
   coefTaus <- 1/coefTaus^2
+
 
   ## ---- resolveOffset ----
   if(is.null(offset)){
@@ -475,7 +479,6 @@ eoar <- function(lambda, beta.params, data, offset,
   ## ---- jagsRun ----
 
   # Initialize the chains and adapt
-  library(rjags)
   (t1=Sys.time())
 
   assign("JAGS.data.0", JAGS.data.0, envir=.GlobalEnv )

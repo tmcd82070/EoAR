@@ -1,0 +1,225 @@
+---
+title: "EoAR with Zeros"
+author: "Trent McDonald"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_notebook: default
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+In this vignette, I demonstrate the that EoAR models 
+give the same mortality estimate regardless of the 
+number of zero sites included. In other words, that EoAR 
+naturally accomodates for a large numbers of zeros. 
+
+My example 
+data is the bat mortality dataset from the EoAR manuscript.
+
+```{r data, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(EoAR)
+data("batMortData", package="EoAR")
+batMortData <- batMortData %>%
+  mutate(NLBA = 0) # no carcasses found
+set.seed(3382001)
+#knitr::kable(batMortData)
+```
+
+# G distribution
+
+```{r prepG, fig.cap="Figure 1: Distribution of $g$ used in all examples"}
+
+# Compute one average g 
+gParams <- EoAR::mixtureBeta(
+  batMortData$gAlpha, 
+  batMortData$gBeta, 
+  batMortData$Turbines)
+
+# increase width of g distribution to illustrate the point
+# If we don't do this, narrowness of g makes changes 
+# in uncertainty difficult to see
+gParams$alpha <- gParams$alpha / 1000
+gParams$beta <- gParams$beta / 1000
+gParams
+
+plot(seq(.001,.2,length=500), dbeta(seq(.001,.2,length=500), gParams$alpha, gParams$beta), type = "l", ylab="Density of g", xlab="g")
+```
+
+
+# One Site
+
+The following EoAR model sums zeros over all sites and averages
+$g$'s. Effectively, the EoAR model uses one site and one data point. 
+
+
+
+```{r oneZero}
+# Input dataset
+zeroData <- batMortData %>% 
+  summarize(NLBA = sum(NLBA),
+            Turbines = sum(Turbines))
+
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = NULL, 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+oneZero <- data.frame(
+  nSites = 1,
+  offset = "no offset",
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+oneZero
+```
+# Two Sites
+
+```{r twoZeros}
+# Input dataset
+zeroData <- data.frame(
+  NLBA = rep(0,2),
+  Turbines = rpois(2, 500)
+)
+
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = NULL, 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+twoZero <- data.frame(
+  nSites = 2,
+  offset = "no offset",
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+twoZero
+```
+
+# Five Sites
+```{r fiveZeros}
+# Input dataset
+zeroData <- data.frame(
+  NLBA = rep(0,5),
+  Turbines = rpois(5, 500)
+)
+
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = NULL, 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+fiveZero <- data.frame(
+  nSites = 5,
+  offset = "no offset",
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+fiveZero
+```
+
+# One Hundred Sites
+
+```{r hundredZeros}
+# Input dataset
+zeroData <- data.frame(
+  NLBA = rep(0,100),
+  Turbines = rpois(100, 500)
+)
+
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = NULL, 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+hundredZero <- data.frame(
+  nSites = 100,
+  offset = "no offset",
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+hundredZero
+```
+
+# Two Thousand Sites
+
+```{r twothousandZeros}
+# Input dataset
+zeroData <- data.frame(
+  NLBA = rep(0,2000),
+  Turbines = rpois(2000, 500)
+)
+
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = zeroData, 
+                       offset = NULL, 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+twothousandZero <- data.frame(
+  nSites = 2000,
+  offset = "no offset",
+  model = paste("Y ~",as.character(fit$call$lambda)[3]), 
+  mMedian = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mMean = mean(unlist(fit$out[,"Mtot"])),
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+twothousandZero
+```
+
+# Final Comparison of Results
+```{r comparision}
+ans <- rbind(oneZero, twoZero, fiveZero, hundredZero, twothousandZero)
+
+knitr::kable(ans)
+```

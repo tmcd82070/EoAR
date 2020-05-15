@@ -1,260 +1,367 @@
 ---
-title: "Testing EoAR with different g calculations"
-output: html_notebook
+title: "EoAR with different g structures and offsets"
+author: "Andrew Tredennick and Trent McDonald"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  html_notebook: default
+editor_options: 
+  chunk_output_type: console
 ---
+
+In this vignette, we demonstrate EoAR models that contain 
+different $g$ calculations and offsets.  We estimate models 
+with a common $g$ across all sites, and compare them to models 
+where $g$ varies by site.  We include an offset, and compare 
+results to those from a model without an offset. 
 
 ```{r data, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(EoAR)
-
-mecDataFile <- system.file("exampleData/mecCovariatesDataFromPaper.txt", package="EoAR")
-mecData <- read.table(mecDataFile, 
-                      header = TRUE, 
-                      stringsAsFactors = FALSE)
-knitr::kable(mecData)
+data("batMortData", package="EoAR")
+batMortData <- batMortData %>%
+  mutate(NLBA = 0) # no carcasses found
+knitr::kable(batMortData)
 ```
 
-## NLBA without covariates
 
-### Facility-specific g
+# LBBA Analysis with Common G's and Offset
 
-#### No offset
+The following replicates two EoAR models reported in the 
+EoAR manuscript. We replicate the (Intercept-only) and the top 
+LBBA model.  The Manuscript analyzes all used a **common g** distribution 
+across facility-year combinations. 
 
-```{r nlba-facg-nooff}
-nlbaData <- mecData %>%
-  mutate(NLBA = 0) %>%  # no carcasses found
-  dplyr::select(Site, Year, NLBA, gAlpha, gBeta, Turbines)
+This section replicates results reported Table 2 of the EoAR 
+manuscript within simulation error.  Setting the random seed used 
+for the manuscript analyses (i.e., `set.seed(33134)`) does 
+not replicate manuscript results exactly because all possible 
+models were fitted in a particular order during the manuscript analysis. 
+We only estimate two 
+models here. 
 
-searchParams <- nlbaData %>%
+```{r ibba-commong-offset}
+set.seed(33134)
+
+# Compute one average g distribution
+gParams <- EoAR::mixtureBeta(batMortData$gAlpha, batMortData$gBeta, batMortData$Turbines)
+
+# For manuscript, we set nburns = 750000, niters = 500*500*5, nthins = 500*5.
+# That is way too much sampling for LBBA, but about right for INBA. Here, 
+# we cut down the iterations to speed things up.
+
+# LBBA intercept only
+lbbaFacG <- EoAR::eoar(LBBA ~ 1,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+
+Dic <- dic.samples(lbbaFacG$jags.model, 
+                   n.iter = 100*thin(lbbaFacG$out), 
+                   thin = thin(lbbaFacG$out), 
+                   progress.bar = "none")
+
+lbba.Intercept <- data.frame(
+  gStructure = "common",
+  offset = "Turbines",
+  structure = as.character(lbbaFacG$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = lbbaFacG$estimates[labels(lbbaFacG,"Mtot"),"Estimate"],
+  mHat.lo = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"5%"],
+  mHat.hi = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"95%"]
+)
+
+summary(lbbaFacG)
+
+# LBBA top model
+lbbaFacG <- EoAR::eoar(LBBA ~ DistToWater + EastWestStratum + SiteAge,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+Dic <- dic.samples(lbbaFacG$jags.model, 
+                   n.iter = 100*thin(lbbaFacG$out), 
+                   thin = thin(lbbaFacG$out), 
+                   progress.bar = "none")
+
+lbba.top <- data.frame(
+  gStructure = "common",
+  offset = "Turbines",
+  structure = as.character(lbbaFacG$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = lbbaFacG$estimates[labels(lbbaFacG,"Mtot"),"Estimate"],
+  mHat.lo = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"5%"],
+  mHat.hi = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"95%"]
+)
+
+summary(lbbaFacG)
+
+lbba.comG.turbOffset <- rbind(lbba.top, lbba.Intercept)
+print(lbba.comG.turbOffset)
+```
+
+# LBBA Analysis with Facility-Specific G's and Offsets
+
+The following code is exactly like that of the previous section 
+except that a different g distribution is used for each facility-year
+combination.
+
+```{r ibba-facG-offset}
+set.seed(33134)
+
+gParams <- batMortData %>% 
   rename("alpha" = gAlpha,
-         "beta" = gBeta)
+         "beta" = gBeta) %>% 
+  select(alpha, beta)
+
+# intercept only
+lbbaFacG <- EoAR::eoar(LBBA ~ 1,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+
+Dic <- dic.samples(lbbaFacG$jags.model, 
+                   n.iter = 100*thin(lbbaFacG$out), 
+                   thin = thin(lbbaFacG$out), 
+                   progress.bar = "none")
+
+lbba.Intercept <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(lbbaFacG$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = lbbaFacG$estimates[labels(lbbaFacG,"Mtot"),"Estimate"],
+  mHat.lo = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"5%"],
+  mHat.hi = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"95%"]
+)
+
+summary(lbbaFacG)
+
+# LBBA top model
+lbbaFacG <- EoAR::eoar(LBBA ~ DistToWater + EastWestStratum + SiteAge,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+Dic <- dic.samples(lbbaFacG$jags.model, 
+                   n.iter = 100*thin(lbbaFacG$out), 
+                   thin = thin(lbbaFacG$out), 
+                   progress.bar = "none")
+
+lbba.top <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(lbbaFacG$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = lbbaFacG$estimates[labels(lbbaFacG,"Mtot"),"Estimate"],
+  mHat.lo = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"5%"],
+  mHat.hi = lbbaFacG$intervals[labels(lbbaFacG,"Mtot"),"95%"]
+)
+
+
+summary(lbbaFacG)
+
+lbba.facG.turbOffset <- rbind(lbba.top, lbba.Intercept)
+print(lbba.facG.turbOffset)
+```
+
+
+
+# NLBA Analysis with Facility-Specific G's and Offsets 
+
+
+```{r nlba-facg-off}
+set.seed(33134)
+
+gParams <- batMortData %>% 
+  rename("alpha" = gAlpha,
+         "beta" = gBeta) %>% 
+  select(alpha, beta)
+
+# intercept only
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+
+Dic <- dic.samples(fit$jags.model, 
+                   n.iter = 100*thin(fit$out), 
+                   thin = thin(fit$out),
+                   progress.bar = "none")
+
+nlba.Intercept <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(fit$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+
+# LBBA top model
+fit <- EoAR::eoar(NLBA ~ DistToWater + EastWestStratum + SiteAge,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
+                       nadapt = 10000, 
+                       nburns = 50000,
+                       niters = 50000, 
+                       nthins = 100,
+                       nchains = 3,
+                       quiet = TRUE)
+Dic <- dic.samples(fit$jags.model, 
+                   n.iter = 100*thin(fit$out), 
+                   thin = thin(fit$out), 
+                   progress.bar = "none")
+
+nlba.top <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(fit$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+
+nlba.facG.turbOffset <- rbind(nlba.top, nlba.Intercept)
+print(nlba.facG.turbOffset)
+```
+
+# NLBA Analysis with Facility-Specific G's But No Offset
+
+```{r nlba-facG-nullOff}
+set.seed(33134)
+
+gParams <- batMortData %>% 
+  rename("alpha" = gAlpha,
+         "beta" = gBeta) %>% 
+  select(alpha, beta)
 
 # Fit the EoAR model, intercept only
-nlbaFacG <- evoab::eoa(NLBA ~ 1,
-                       beta.params = searchParams, 
-                       data = nlbaData, 
+nlbaFacG <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = batMortData, 
                        offset = NULL, 
                        nadapt = 10000, 
                        nburns = 50000,
                        niters = 50000, 
                        nthins = 100,
-                       nchains = 2,
+                       nchains = 3,
                        quiet = TRUE)
 summary(nlbaFacG)
 ```
 
-#### With offset
+# NLBA Analysis with Common G's and Offsets 
 
-```{r nlba-facg-off}
-# Fit the EoAR model, intercept only
-nlbaFacGOff <- evoab::eoa(NLBA ~ 1,
-                       beta.params = searchParams, 
-                       data = nlbaData, 
-                       offset = log(nlbaData$Turbines), 
+
+```{r nlba-comG-off}
+set.seed(33134)
+
+gParams <- EoAR::mixtureBeta(batMortData$gAlpha, 
+                             batMortData$gBeta, 
+                             batMortData$Turbines)
+
+# intercept only
+fit <- EoAR::eoar(NLBA ~ 1,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
                        nadapt = 10000, 
                        nburns = 50000,
                        niters = 50000, 
                        nthins = 100,
-                       nchains = 2,
+                       nchains = 3,
                        quiet = TRUE)
-summary(nlbaFacGOff)
-```
 
-### Fleet-wide g
+Dic <- dic.samples(fit$jags.model, 
+                   n.iter = 100*thin(fit$out), 
+                   thin = thin(fit$out),
+                   progress.bar = "none")
 
-#### No offset
-```{r nlba-fleetg-nooff}
-fleetG <- evoab::mixtureBeta(nlbaData$gAlpha, 
-                             nlbaData$gBeta, 
-                             nlbaData$Turbines)
+nlba.Intercept <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(fit$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
 
-nlbaFleetG <- evoab::eoa(NLBA ~ 1,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = nlbaData, 
-                       offset = NULL, 
+summary(fit)
+
+# LBBA top model
+fit <- EoAR::eoar(NLBA ~ DistToWater + EastWestStratum + SiteAge,
+                       beta.params = gParams, 
+                       data = batMortData, 
+                       offset = log(Turbines), 
                        nadapt = 10000, 
                        nburns = 50000,
                        niters = 50000, 
                        nthins = 100,
-                       nchains = 2,
+                       nchains = 3,
                        quiet = TRUE)
-summary(nlbaFleetG)
+Dic <- dic.samples(fit$jags.model, 
+                   n.iter = 100*thin(fit$out), 
+                   thin = thin(fit$out), 
+                   progress.bar = "none")
+
+nlba.top <- data.frame(
+  gStructure = "facilityYear",
+  offset = "Turbines",
+  structure = as.character(fit$call$lambda)[3], 
+  DIC = sum(Dic$deviance),
+  mHat = fit$estimates[labels(fit,"Mtot"),"Estimate"],
+  mHat.lo = fit$intervals[labels(fit,"Mtot"),"5%"],
+  mHat.hi = fit$intervals[labels(fit,"Mtot"),"95%"]
+)
+
+summary(fit)
+
+nlba.comG.turbOffset <- rbind(nlba.top, nlba.Intercept)
+print(nlba.facG.turbOffset)
 ```
 
-#### With offset
-```{r nlba-fleetg-off}
-nlbaFleetGOff <- evoab::eoa(NLBA ~ 1,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = nlbaData, 
-                       offset = log(nlbaData$Turbines), 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(nlbaFleetGOff)
+# Final estimates from all runs
+
+```{r}
+ans <- rbind(lbba.comG.turbOffset, 
+             lbba.facG.turbOffset, 
+             nlba.comG.turbOffset, 
+             nlba.facG.turbOffset)
+print(ans)
 ```
-
-## INBA without covariates
-
-### Facility-specific g
-
-#### No offset
-
-```{r inba-facg-nooff}
-inbaData <- mecData %>%
-  drop_na() %>%  # drop the NA INBA rows
-  dplyr::select(Site, Year, INBA, gAlpha, gBeta, Turbines)
-
-searchParams <-inbaData %>%
-  rename("alpha" = gAlpha,
-         "beta" = gBeta)
-
-# Fit the EoAR model, intercept only
-inbaFacG <- evoab::eoa(INBA ~ 1,
-                       beta.params = searchParams, 
-                       data = inbaData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(inbaFacG)
-```
-
-#### With offset
-
-```{r inba-facg-off}
-# Fit the EoAR model, intercept only
-inbaFacGOff <- evoab::eoa(INBA ~ 1,
-                       beta.params = searchParams, 
-                       data = inbaData, 
-                       offset = log(inbaData$Turbines), 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(inbaFacGOff)
-```
-
-### Fleet-wide g
-
-#### No offset
-```{r inba-fleetg-nooff}
-fleetG <- evoab::mixtureBeta(inbaData$gAlpha, 
-                             inbaData$gBeta, 
-                             inbaData$Turbines)
-
-inbaFleetG <- evoab::eoa(INBA ~ 1,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = inbaData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(inbaFleetG)
-```
-
-#### With offset
-```{r inba-fleetg-off}
-inbaFleetGOff <- evoab::eoa(INBA ~ 1,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = inbaData, 
-                       offset = log(inbaData$Turbines), 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(inbaFleetGOff)
-```
-
-## LBBA with covariates
-
-### Facility-specific g
-
-#### No offset
-
-```{r lbba-facg-nooff}
-lbbaData <- mecData
-
-searchParams <-lbbaData %>%
-  rename("alpha" = gAlpha,
-         "beta" = gBeta)
-
-# Fit the EoAR model, intercept only
-lbbaFacG <- evoab::eoa(LBBA ~ DistToWater + EastWestStratum + SiteAge,
-                       beta.params = searchParams, 
-                       data = lbbaData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(lbbaFacG)
-```
-
-#### With offset
-
-```{r lbba-facg-off}
-# Fit the EoAR model, intercept only
-lbbaFacGOff <- evoab::eoa(LBBA ~ DistToWater + EastWestStratum + SiteAge,
-                       beta.params = searchParams, 
-                       data = lbbaData, 
-                       offset = log(lbbaData$Turbines), 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(lbbaFacGOff)
-```
-
-### Fleet-wide g
-
-#### No offset
-```{r lbba-fleetg-nooff}
-fleetG <- evoab::mixtureBeta(lbbaData$gAlpha, 
-                             lbbaData$gBeta, 
-                             lbbaData$Turbines)
-
-lbbaFleetG <- evoab::eoa(LBBA ~ DistToWater + EastWestStratum + SiteAge,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = lbbaData, 
-                       offset = NULL, 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(lbbaFleetG)
-```
-
-#### With offset
-```{r lbba-fleetg-off}
-lbbaFleetGOff <- evoab::eoa(LBBA ~ DistToWater + EastWestStratum + SiteAge,
-                       beta.params = fleetG[ , c("alpha","beta")], 
-                       data = lbbaData, 
-                       offset = log(lbbaData$Turbines), 
-                       nadapt = 10000, 
-                       nburns = 50000,
-                       niters = 50000, 
-                       nthins = 100,
-                       nchains = 2,
-                       quiet = TRUE)
-summary(lbbaFleetGOff)
-```
-

@@ -77,7 +77,7 @@ mixtureBeta <- function(Ba,Bb,w=NULL){
     ## calculate the variance based on a mixture distribution
     (Vg <- sum(w^2*sig2))
 
-    if(!Vg<Eg*(1-Eg)){ ## this check is need for the method of moments
+    if(Vg > (Eg*(1-Eg))){ ## this check is need for the method of moments
         message(paste0('The mixture beta mean is ',Eg,' and the variance is ',Vg))
         stop('The variance is to big! This will produce negative values from the method of moments estimation.')
     }

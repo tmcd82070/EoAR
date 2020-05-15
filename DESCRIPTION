@@ -1,7 +1,7 @@
 Package: EoAR
 Type: Package
 Title: Evidence of Absence Regression (EoAR)
-Version: 0.1.1
+Version: 0.1.2
 Author: Trent McDonald
 Maintainer: Trent McDonald <tmcdonald@west-inc.com>
 Description: Routines for estimating number of missed entities after a series of
