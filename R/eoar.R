@@ -322,7 +322,7 @@ eoar <- function(lambda, beta.params, data, offset,
                 quiet=FALSE, seeds=NULL,
                 vagueSDMultiplier = 100){
   
-  load.module("dic", quiet = TRUE)
+  rjags::load.module("dic", quiet = TRUE)
 
   ## ---- lambdaModel ----
   # Resolve formula for lambda
