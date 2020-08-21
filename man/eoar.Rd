@@ -209,7 +209,7 @@ An object of class "eoar".  EoAR objects are lists containing the following comp
 }
 }
 \description{
-This routine estimates an EoAR model.  An EoAR model
+An EoAR model
 consists of a log-linear model for lambda, the mean number of search
 targets per "cell", where
 "cell" is a measured experimental unit such as a turbine, season, year, etc.
@@ -217,8 +217,8 @@ Inputs include
 information about the number of targets found (\code{Y}) and the
 g-values (=probatility of
 discovery) at all
-searched sites.  The method is Bayesian and allows either an uniform prior for lambda
-or an informed prior.
+searched sites.  The method is Bayesian and allows either uniform
+or informed priors for lambda.
 Estimation is performed in JAGS.
 }
 \details{

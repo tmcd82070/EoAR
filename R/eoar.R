@@ -312,6 +312,8 @@ eoar <- function(lambda, beta.params, data, offset,
                 nthins = 10, nchains = 3, nadapt = 3000,
                 quiet=FALSE, seeds=NULL,
                 vagueSDMultiplier = 100){
+  
+  load.module("dic", quiet = TRUE)
 
   ## ---- lambdaModel ----
   # Resolve formula for lambda
@@ -419,7 +421,7 @@ eoar <- function(lambda, beta.params, data, offset,
 		for( i in 1:nx ){
 			g[i] ~ dbeta(alpha[i], beta[i])
 			M[i] ~ dpois(offlink[i]*lambda[i])
-			Y[i] ~ dbin( g[i], M[i] )
+			Y[i] ~ dbin(g[i], M[i])
 		}
 
 		Mtot <- sum(M[])
@@ -502,6 +504,15 @@ eoar <- function(lambda, beta.params, data, offset,
   									 n.iter=niters,
   									 thin=nthins,
   									 progress.bar=ifelse(quiet, "none","text"))
+   if(!quiet) cat("Computing DIC and WAIC...\n")
+  s <- jags.samples(jags, 
+                    c("deviance", "WAIC"), 
+                    type = "mean", 
+                    n.iter = niters,
+                    thin = nthins,
+                    progress.bar=ifelse(quiet, "none","text")) 
+  s <- lapply(s, unclass)
+  ics <- sapply(s, sum)
 
   (t2=Sys.time())
   t3 <- t2-t1
@@ -542,6 +553,7 @@ eoar <- function(lambda, beta.params, data, offset,
     list(
     out=out,
     jags.model=jags,
+    infoCrits = ics,
     priors = priors.df,
     seeds=seeds,
     offset=offset,
