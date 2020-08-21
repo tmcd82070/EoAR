@@ -16,6 +16,7 @@ eoar(
   nthins = 10,
   nchains = 3,
   nadapt = 3000,
+  computeIC = FALSE,
   quiet = FALSE,
   seeds = NULL,
   vagueSDMultiplier = 100
@@ -103,6 +104,10 @@ check convergence.}
 burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
 and stepsize to increase convergence speed.}
 
+\item{computeIC}{A logical (default = FALSE) indicating whether to compute
+and return information criteria. Currently, WAIC and the deviance of the
+model are returned if \code{computeIC==TRUE}.}
+
 \item{quiet}{Logical indicating whether to print output during estimation.
 \code{quiet==FALSE} shows text based progress bars during estimation.}
 
@@ -158,6 +163,10 @@ An object of class "eoar".  EoAR objects are lists containing the following comp
   \item \code{jags.model} : a \code{jags.model} object used to estimate the model.
   This object can be used to compute additional convergence and model fit statistics,
   such as DIC (see \code{\link{rjags::dic.samples}}).
+  
+  \item \code{infoCrits} : a named numeric vector containing the WAIC 
+  and the deviance computed for the model. If \code{computeIC==FALSE},
+  then \code{infoCrits} is NULL.
 
   \item \code{priors} : the mean and standard deviation of the normal
   prior distributions for all coefficients. This differs from the input

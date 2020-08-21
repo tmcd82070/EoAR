@@ -94,6 +94,10 @@
 #' @param nadapt The number of adapting iterations to perform before
 #' burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
 #' and stepsize to increase convergence speed.
+#' 
+#' @param computeIC A logical (default = FALSE) indicating whether to compute
+#' and return information criteria. Currently, WAIC and the deviance of the
+#' model are returned if \code{computeIC==TRUE}.
 #'
 #' @param quiet Logical indicating whether to print output during estimation.
 #' \code{quiet==FALSE} shows text based progress bars during estimation.
@@ -195,6 +199,10 @@
 #'   \item \code{jags.model} : a \code{jags.model} object used to estimate the model.
 #'   This object can be used to compute additional convergence and model fit statistics,
 #'   such as DIC (see \code{\link{rjags::dic.samples}}).
+#'   
+#'   \item \code{infoCrits} : a named numeric vector containing the WAIC 
+#'   and the deviance computed for the model. If \code{computeIC==FALSE},
+#'   then \code{infoCrits} is NULL.
 #'
 #'   \item \code{priors} : the mean and standard deviation of the normal
 #'   prior distributions for all coefficients. This differs from the input
@@ -310,6 +318,7 @@ eoar <- function(lambda, beta.params, data, offset,
                 priors=NULL,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
+                computeIC = FALSE,
                 quiet=FALSE, seeds=NULL,
                 vagueSDMultiplier = 100){
   
@@ -504,16 +513,20 @@ eoar <- function(lambda, beta.params, data, offset,
   									 n.iter=niters,
   									 thin=nthins,
   									 progress.bar=ifelse(quiet, "none","text"))
-   if(!quiet) cat("Computing DIC and WAIC...\n")
-  s <- jags.samples(jags, 
-                    c("deviance", "WAIC"), 
-                    type = "mean", 
-                    n.iter = niters,
-                    thin = nthins,
-                    progress.bar=ifelse(quiet, "none","text")) 
-  s <- lapply(s, unclass)
-  ics <- sapply(s, sum)
-
+  
+  ics <- NULL
+  if(computeIC) {
+    if(!quiet) cat("Computing WAIC and deviance...\n")
+    s <- jags.samples(jags, 
+                      c("deviance", "WAIC"), 
+                      type = "mean", 
+                      n.iter = niters,
+                      thin = nthins,
+                      progress.bar=ifelse(quiet, "none","text")) 
+    s <- lapply(s, unclass)
+    ics <- sapply(s, sum)
+  } 
+   
   (t2=Sys.time())
   t3 <- t2-t1
   if(!quiet) cat(paste("Execution time:", round(t3,2), attr(t3,"units"), "\n\n"))
