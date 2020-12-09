@@ -20,6 +20,7 @@ PostPredictEoAR <- function(object,
                             nyears = 1) {
   X <- model.matrix(object, newdata)
   betaMat <- t(as.matrix(object$out[,object$coef.labels]))
+  sigmaVec <- as.numeric(as.matrix(object$out[,"sigmaLambda"]))
   
   n <- nrow(X)
   k <- ncol(betaMat)
@@ -29,25 +30,40 @@ PostPredictEoAR <- function(object,
   M <- matrix(data = 0, nrow = n, ncol = k)
   C <- matrix(data = 0, nrow = n, ncol = k)
   for(i in 1:nrow(X)) {
-    lambda <- X[i, ] %*% betaMat + log(newoffset[i])
-    lambdaExp[i, ] <- exp(lambda)
+    lambdaMu <- X[i, ] %*% betaMat
+    lambdaLog <- rnorm(k, lambdaMu[1, ], sigmaVec)
+    lambdaExp[i, ] <- exp(lambdaLog)
     lambdaScl <- lambdaExp[i, ] * nyears
-    M[i, ] <- rpois(k, lambdaScl)
+    M[i, ] <- rpois(k, lambdaScl * newoffset[i])
     
     if(!is.null(beta.params)){
       g <- rbeta(1, beta.params$alpha[i], beta.params$beta[i])
       C[i, ] <- rbinom(k, M[i, ], g)
+      Csummary <- t(apply(C, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
     }
   }
   
   if(is.null(beta.params)){
     C <- NULL
+    Csummary <- NULL
   }
   
+  Lsummary <- t(apply(lambdaExp, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
+  Msummary <- t(apply(M, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
+  
+  
+  
   out <- list(
-    postLambda = lambdaExp,
-    postMortality = M,
-    postCarcasses = C
+    Posteriors = list(
+      postLambda = lambdaExp,
+      postMortality = M,
+      postCarcasses = C
+    ),
+    Summaries = list(
+      Lambda = Lsummary,
+      Mortality = Msummary,
+      Carcasses = Csummary
+    )
   )
   return(out)
 }
