@@ -28,6 +28,7 @@ PostPredictEoAR <- function(object,
   # loop over observation rows
   lambdaExp <- matrix(data = 0, nrow = n, ncol = k)
   M <- matrix(data = 0, nrow = n, ncol = k)
+  MOneYear <- matrix(data = 0, nrow = n, ncol = k)
   C <- matrix(data = 0, nrow = n, ncol = k)
   for(i in 1:nrow(X)) {
     lambdaMu <- X[i, ] %*% betaMat
@@ -35,12 +36,16 @@ PostPredictEoAR <- function(object,
     lambdaExp[i, ] <- exp(lambdaLog)
     lambdaScl <- lambdaExp[i, ] * nyears
     M[i, ] <- rpois(k, lambdaScl * newoffset[i])
+    MOneYear[i, ] <- rpois(k, lambdaExp[i, ] * newoffset[i])
     
     if(!is.null(beta.params)){
       g <- rbeta(1, beta.params$alpha[i], beta.params$beta[i])
       C[i, ] <- rbinom(k, M[i, ], g)
-      Csummary <- t(apply(C, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
     }
+  }
+  
+  if(!is.null(beta.params)){
+    Csummary <- t(apply(C, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
   }
   
   if(is.null(beta.params)){
@@ -48,20 +53,32 @@ PostPredictEoAR <- function(object,
     Csummary <- NULL
   }
   
+  # Compute fleet-wide mortality
+  MfleetOneYear <- apply(MOneYear, 2, sum)
+  Mfleet <- apply(M, 2, sum)
+  
   Lsummary <- t(apply(lambdaExp, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
   Msummary <- t(apply(M, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
-  
+  MOnesummary <- t(apply(MOneYear, 1, quantile, probs = c(0.025, 0.05, 0.5, 0.95, 0.975)))
+  Mfleetsummary <- quantile(Mfleet, probs = c(0.025, 0.05, 0.5, 0.95, 0.975))
+  MfleetOneYearsummary <- quantile(MfleetOneYear, probs = c(0.025, 0.05, 0.5, 0.95, 0.975))
   
   
   out <- list(
     Posteriors = list(
       postLambda = lambdaExp,
       postMortality = M,
+      postMortalityOneYear = MOneYear,
+      postMFleet = Mfleet,
+      postMFleetOneYear = MfleetOneYear,
       postCarcasses = C
     ),
     Summaries = list(
       Lambda = Lsummary,
       Mortality = Msummary,
+      MortalityOneYear = MOnesummary,
+      MFleet = Mfleetsummary,
+      MfleetOneYear = MfleetOneYearsummary,
       Carcasses = Csummary
     )
   )
