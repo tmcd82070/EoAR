@@ -111,7 +111,9 @@
 #' The seeds, whether chosen by this routine or specified, are
 #' stored in the output object.
 #' 
-#' @param doEoA A logical.
+#' @param doEoA A logical indicating whether to mimic EoA (TRUE) by using
+#'     an informed Weibull prior on the intercept. Typically used for
+#'     intercept only models with low counts.
 #'
 #' @details
 #' Observed quantities in the model are Y[i] = number of targets
@@ -448,12 +450,18 @@ eoar <- function(lambda, beta.params, data, offset,
 	"
   } 
   if(doEoA == TRUE) {
+    # update prior specs
+    coefMus <- 0.7
+    coefTaus <- 0.03981072
+    
     jagsModel <- "model{
 
 		# Priors
     for(i in 1:ncovars){
-      a[i] ~ dweib(0.7, 0.03981072)  # informed EoA-style prior
+      a[i] ~ dweib(coefMus[i], coefTaus[i])  # informed EoA-style prior
     }
+    sigmaLambda ~ dunif(0, 100)
+    tau <- 1/sigmaLambda^2
 
 
     # functional relations
@@ -462,13 +470,15 @@ eoar <- function(lambda, beta.params, data, offset,
         logl[i,j] <- a[j]*lambda.covars[i,j]
       }
       offlink[i] <- exp(offset[i])
-      lambdaMu[i] <- sum(logl[i,])
+      lambdaMu[i] <- log(sum(logl[i,]))
     }
 
 		# Likelihood
 		for( i in 1:nx ){
 			g[i] ~ dbeta(alpha[i], beta[i])
-			M[i] ~ dpois(offlink[i]*lambdaMu[i])
+			lambdaLog[i] ~ dnorm(lambdaMu[i], tau)
+			lambda[i] <- exp(lambdaLog[i])
+			M[i] ~ dpois(offlink[i]*lambda[i])
 			Y[i] ~ dbin(g[i], M[i])
 		}
 
@@ -524,7 +534,7 @@ eoar <- function(lambda, beta.params, data, offset,
   }
 
 
-  # Parameters to be monitored by WinBUGS
+  # Parameters to be monitored by JAGS
   params <- c("a", "M", "lambda", "Mtot", "sigmaLambda")
 
 

@@ -121,7 +121,9 @@ in JAGS because JAGS is a separate package.
 The seeds, whether chosen by this routine or specified, are
 stored in the output object.}
 
-\item{doEoA}{A logical.}
+\item{doEoA}{A logical indicating whether to mimic EoA (TRUE) by using
+an informed Weibull prior on the intercept. Typically used for
+intercept only models with low counts.}
 }
 \value{
 An object of class "eoar".  EoAR objects are lists containing the following components:
