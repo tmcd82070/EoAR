@@ -1,0 +1,5 @@
+
+model{
+beta ~ dweib (2, 4e-04 )
+Y <- beta
+}

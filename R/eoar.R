@@ -110,6 +110,8 @@
 #' in JAGS because JAGS is a separate package.
 #' The seeds, whether chosen by this routine or specified, are
 #' stored in the output object.
+#' 
+#' @param doEoA A logical.
 #'
 #' @details
 #' Observed quantities in the model are Y[i] = number of targets
@@ -319,7 +321,7 @@ eoar <- function(lambda, beta.params, data, offset,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
                 computeIC = FALSE,
-                quiet=FALSE, seeds=NULL,
+                quiet=FALSE, seeds=NULL, doEoA = FALSE,
                 vagueSDMultiplier = 100){
   
   rjags::load.module("dic", quiet = TRUE)
@@ -410,7 +412,8 @@ eoar <- function(lambda, beta.params, data, offset,
 
 
 	## ---- bayesModelCode ----
-	jagsModel <- "model{
+  if(doEoA == FALSE) {
+    jagsModel <- "model{
 
 		# Priors
     for(i in 1:ncovars){
@@ -426,7 +429,6 @@ eoar <- function(lambda, beta.params, data, offset,
         logl[i,j] <- a[j]*lambda.covars[i,j]
       }
       offlink[i] <- exp(offset[i])
-      # lambda[i] <- exp(sum(logl[i,]))
       
       lambdaMu[i] <- sum(logl[i,])
     }
@@ -437,7 +439,6 @@ eoar <- function(lambda, beta.params, data, offset,
 			lambdaLog[i] ~ dnorm(lambdaMu[i], tau)
 			lambda[i] <- exp(lambdaLog[i])
 			M[i] ~ dpois(offlink[i]*lambda[i])
-			# M[i] ~ dpois(lambda[i])
 			Y[i] ~ dbin(g[i], M[i])
 		}
 
@@ -445,6 +446,38 @@ eoar <- function(lambda, beta.params, data, offset,
 
 		}
 	"
+  } 
+  if(doEoA == TRUE) {
+    jagsModel <- "model{
+
+		# Priors
+    for(i in 1:ncovars){
+      a[i] ~ dweib(0.7, 0.03981072)  # informed EoA-style prior
+    }
+
+
+    # functional relations
+    for(i in 1:nx){
+      for(j in 1:ncovars){
+        logl[i,j] <- a[j]*lambda.covars[i,j]
+      }
+      offlink[i] <- exp(offset[i])
+      lambdaMu[i] <- sum(logl[i,])
+    }
+
+		# Likelihood
+		for( i in 1:nx ){
+			g[i] ~ dbeta(alpha[i], beta[i])
+			M[i] ~ dpois(offlink[i]*lambdaMu[i])
+			Y[i] ~ dbin(g[i], M[i])
+		}
+
+		Mtot <- sum(M[])
+
+		}
+	"
+  }
+	
 
 	JAGS.data.0 <- list ( Y = Y,
 													nx = nyrs,
@@ -475,9 +508,9 @@ eoar <- function(lambda, beta.params, data, offset,
   Inits <- function(x,strt,seed){
   		gg <-rbeta(x$nx, x$alpha, x$beta)
   		M <- ceiling(x$Y / gg) + 1
-  		#a <- strt$startA[,"Estimate"] + rnorm(nrow(strt$startA),0,strt$startA[,"Std. Error"])
+  		ys <- unique(x$Y)
   		a <- rep(0,x$ncovars)
-  		a[1] <- log(mean(M))
+  		a[1] <- log(mean(M)) + 1E-10  # to avoid true zero and errors
   		list ( a = a,
   					 M = M,
   					 g=gg,

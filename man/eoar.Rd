@@ -19,6 +19,7 @@ eoar(
   computeIC = FALSE,
   quiet = FALSE,
   seeds = NULL,
+  doEoA = FALSE,
   vagueSDMultiplier = 100
 )
 }
@@ -119,6 +120,8 @@ that \code{set.seed} has no effect on the random number sequences used
 in JAGS because JAGS is a separate package.
 The seeds, whether chosen by this routine or specified, are
 stored in the output object.}
+
+\item{doEoA}{A logical.}
 }
 \value{
 An object of class "eoar".  EoAR objects are lists containing the following components:
