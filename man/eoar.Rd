@@ -20,6 +20,7 @@ eoar(
   quiet = FALSE,
   seeds = NULL,
   doEoA = FALSE,
+  lambdaPriorParams = NULL,
   vagueSDMultiplier = 100
 )
 }
@@ -124,6 +125,11 @@ stored in the output object.}
 \item{doEoA}{A logical indicating whether to mimic EoA (TRUE) by using
 an informed Weibull prior on the intercept. Typically used for
 intercept only models with low counts.}
+
+\item{lambdaPriorParams}{A two element vector for the first and second
+parameters of a Weibull distribution. Note the parameters must
+follow the JAGS parameterization of the Weibull. These parameters
+define the prior distribution for lambda when \code{doEoA} = TRUE.}
 }
 \value{
 An object of class "eoar".  EoAR objects are lists containing the following components:

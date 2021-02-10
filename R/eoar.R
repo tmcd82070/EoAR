@@ -115,6 +115,11 @@
 #'     an informed Weibull prior on the intercept. Typically used for
 #'     intercept only models with low counts.
 #'
+#' @param lambdaPriorParams A two element vector for the first and second
+#'     parameters of a Weibull distribution. Note the parameters must
+#'     follow the JAGS parameterization of the Weibull. These parameters
+#'     define the prior distribution for lambda when \code{doEoA} = TRUE.
+#'
 #' @details
 #' Observed quantities in the model are Y[i] = number of targets
 #' observed in cell i, and the covariates X[1i], X[2i], etc. Parameters in
@@ -324,6 +329,7 @@ eoar <- function(lambda, beta.params, data, offset,
                 nthins = 10, nchains = 3, nadapt = 3000,
                 computeIC = FALSE,
                 quiet=FALSE, seeds=NULL, doEoA = FALSE,
+                lambdaPriorParams = NULL,
                 vagueSDMultiplier = 100){
   
   rjags::load.module("dic", quiet = TRUE)
@@ -451,8 +457,10 @@ eoar <- function(lambda, beta.params, data, offset,
   } 
   if(doEoA == TRUE) {
     # update prior specs
-    coefMus <- 0.7
-    coefTaus <- 0.03981072
+    # coefMus <- 0.7
+    # coefTaus <- 0.03981072
+    coefMus <- lambdaPriorParams[1]
+    coefTaus <- lambdaPriorParams[2]
     
     jagsModel <- "model{
 
