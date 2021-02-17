@@ -19,7 +19,7 @@ eoar(
   computeIC = FALSE,
   quiet = FALSE,
   seeds = NULL,
-  doEoA = FALSE,
+  type = "EoAR",
   lambdaPriorParams = NULL,
   vagueSDMultiplier = 100
 )
@@ -122,14 +122,17 @@ in JAGS because JAGS is a separate package.
 The seeds, whether chosen by this routine or specified, are
 stored in the output object.}
 
-\item{doEoA}{A logical indicating whether to mimic EoA (TRUE) by using
-an informed Weibull prior on the intercept. Typically used for
-intercept only models with low counts.}
+\item{type}{A character string specifying one of the following: "EoAR" runs
+a standard EoAR analysis with covariates; "NullEoAR" runs an
+intercept-only version of EoAR; "EoA" runs an intercept-only
+version of EoAR with an informed prior and collapsed data (one 
+row of data) to mimic EoA as closely as possible.}
 
 \item{lambdaPriorParams}{A two element vector for the first and second
 parameters of a Weibull distribution. Note the parameters must
 follow the JAGS parameterization of the Weibull. These parameters
-define the prior distribution for lambda when \code{doEoA} = TRUE.}
+define the prior distribution for lambda when \code{type} = "NullEoAR"
+or "EoA".}
 }
 \value{
 An object of class "eoar".  EoAR objects are lists containing the following components:

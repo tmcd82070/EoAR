@@ -111,14 +111,18 @@
 #' The seeds, whether chosen by this routine or specified, are
 #' stored in the output object.
 #' 
-#' @param doEoA A logical indicating whether to mimic EoA (TRUE) by using
-#'     an informed Weibull prior on the intercept. Typically used for
-#'     intercept only models with low counts.
+#' 
+#' @param type A character string specifying one of the following: "EoAR" runs
+#'     a standard EoAR analysis with covariates; "NullEoAR" runs an
+#'     intercept-only version of EoAR; "EoA" runs an intercept-only
+#'     version of EoAR with an informed prior and collapsed data (one 
+#'     row of data) to mimic EoA as closely as possible. 
 #'
 #' @param lambdaPriorParams A two element vector for the first and second
 #'     parameters of a Weibull distribution. Note the parameters must
 #'     follow the JAGS parameterization of the Weibull. These parameters
-#'     define the prior distribution for lambda when \code{doEoA} = TRUE.
+#'     define the prior distribution for lambda when \code{type} = "NullEoAR"
+#'     or "EoA". 
 #'
 #' @details
 #' Observed quantities in the model are Y[i] = number of targets
@@ -328,7 +332,7 @@ eoar <- function(lambda, beta.params, data, offset,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
                 computeIC = FALSE,
-                quiet=FALSE, seeds=NULL, doEoA = FALSE,
+                quiet=FALSE, seeds=NULL, type = "EoAR",
                 lambdaPriorParams = NULL,
                 vagueSDMultiplier = 100){
   
@@ -355,6 +359,13 @@ eoar <- function(lambda, beta.params, data, offset,
   offset <- as.vector(model.offset(mf))
   ncovars <- ncol(lambda.covars)
   vnames<-dimnames(lambda.covars)[[2]]
+  
+  ## ---- error check on type-covar combination ----
+  if(ncovars > 1 & type != "EoAR") {
+    stop(paste0("The specified 'type' argument is not consistent with the model ", 
+                "formula. \nDid you include covariates for an intercept ",
+                "only model type?"))
+  }
 
   ## ---- initialize ----
   # Make sure one beta dist'n parameter per row
@@ -405,7 +416,6 @@ eoar <- function(lambda, beta.params, data, offset,
   # cat("Prior mean and standard error:\n")
   # cat(paste("mean =", coefMus, "\n"))
   # cat(paste("sd   =", coefTaus, "\n"))
-
   coefTaus <- 1/coefTaus^2
 
 
@@ -420,7 +430,7 @@ eoar <- function(lambda, beta.params, data, offset,
 
 
 	## ---- bayesModelCode ----
-  if(doEoA == FALSE) {
+  if(type == "EoAR") {
     jagsModel <- "model{
 
 		# Priors
@@ -455,7 +465,7 @@ eoar <- function(lambda, beta.params, data, offset,
 		}
 	"
   } 
-  if(doEoA == TRUE) {
+  if(type == "NullEoAR") {
     # update prior specs
     # coefMus <- 0.7
     # coefTaus <- 0.03981072
@@ -486,6 +496,40 @@ eoar <- function(lambda, beta.params, data, offset,
 			g[i] ~ dbeta(alpha[i], beta[i])
 			lambdaLog[i] ~ dnorm(lambdaMu[i], tau)
 			lambda[i] <- exp(lambdaLog[i])
+			M[i] ~ dpois(offlink[i]*lambda[i])
+			Y[i] ~ dbin(g[i], M[i])
+		}
+
+		Mtot <- sum(M[])
+
+		}
+	"
+  }
+  
+  if(type == "EoA") {
+    # update prior specs
+    coefMus <- lambdaPriorParams[1]
+    coefTaus <- lambdaPriorParams[2]
+    
+    jagsModel <- "model{
+
+		# Priors
+    for(i in 1:ncovars){
+      a[i] ~ dweib(coefMus[i], coefTaus[i])  # informed EoA-style prior
+    }
+
+    # functional relations
+    for(i in 1:nx){
+      for(j in 1:ncovars){
+        l[i,j] <- a[j]*lambda.covars[i,j]
+      }
+      offlink[i] <- exp(offset[i])
+      lambda[i] <- sum(l[i,])
+    }
+
+		# Likelihood
+		for( i in 1:nx ){
+			g[i] ~ dbeta(alpha[i], beta[i])
 			M[i] ~ dpois(offlink[i]*lambda[i])
 			Y[i] ~ dbin(g[i], M[i])
 		}
