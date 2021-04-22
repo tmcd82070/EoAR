@@ -626,8 +626,12 @@ eoar <- function(lambda, beta.params, data, offset,
                       n.iter = niters,
                       thin = nthins,
                       progress.bar=ifelse(quiet, "none","text")) 
-    s <- lapply(s, unclass)
-    ics <- sapply(s, sum)
+    s$p_waic <- s$WAIC  # this is actually effective number of parameters
+    s$waic <- s$deviance + s$p_waic  # compute WAIC
+    tmp <- sapply(s, sum)
+    ics <- c(waic = tmp[["waic"]], 
+             p_waic = tmp[["p_waic"]], 
+             deviance = tmp[["deviance"]])
   } 
    
   (t2=Sys.time())
