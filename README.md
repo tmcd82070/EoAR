@@ -61,7 +61,7 @@ Loaded modules: basemod,bugs
 You can install the latest release of `EoAR` directly from GitHub without 
 obtaining a local copy.  Issue the following command:
 ```
-devtools::install_github("tmcd82070/EoAR")
+devtools::install_github("atredennick/EoAR")
 ```
 
 #### Using `devtools` and local repository

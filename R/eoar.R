@@ -94,6 +94,10 @@
 #' @param nadapt The number of adapting iterations to perform before
 #' burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
 #' and stepsize to increase convergence speed.
+#' 
+#' @param computeIC A logical (default = FALSE) indicating whether to compute
+#' and return information criteria. Currently, WAIC and the deviance of the
+#' model are returned if \code{computeIC==TRUE}.
 #'
 #' @param quiet Logical indicating whether to print output during estimation.
 #' \code{quiet==FALSE} shows text based progress bars during estimation.
@@ -106,6 +110,19 @@
 #' in JAGS because JAGS is a separate package.
 #' The seeds, whether chosen by this routine or specified, are
 #' stored in the output object.
+#' 
+#' 
+#' @param type A character string specifying one of the following: "EoAR" runs
+#'     a standard EoAR analysis with covariates; "NullEoAR" runs an
+#'     intercept-only version of EoAR; "EoA" runs an intercept-only
+#'     version of EoAR with an informed prior and collapsed data (one 
+#'     row of data) to mimic EoA as closely as possible. 
+#'
+#' @param lambdaPriorParams A two element vector for the first and second
+#'     parameters of a Weibull distribution. Note the parameters must
+#'     follow the JAGS parameterization of the Weibull. These parameters
+#'     define the prior distribution for lambda when \code{type} = "NullEoAR"
+#'     or "EoA". 
 #'
 #' @details
 #' Observed quantities in the model are Y[i] = number of targets
@@ -195,6 +212,10 @@
 #'   \item \code{jags.model} : a \code{jags.model} object used to estimate the model.
 #'   This object can be used to compute additional convergence and model fit statistics,
 #'   such as DIC (see \code{\link{rjags::dic.samples}}).
+#'   
+#'   \item \code{infoCrits} : a named numeric vector containing the WAIC 
+#'   and the deviance computed for the model. If \code{computeIC==FALSE},
+#'   then \code{infoCrits} is NULL.
 #'
 #'   \item \code{priors} : the mean and standard deviation of the normal
 #'   prior distributions for all coefficients. This differs from the input
@@ -310,8 +331,12 @@ eoar <- function(lambda, beta.params, data, offset,
                 priors=NULL,
                 conf.level=0.9, nburns = 500000, niters = 20000,
                 nthins = 10, nchains = 3, nadapt = 3000,
-                quiet=FALSE, seeds=NULL,
+                computeIC = FALSE,
+                quiet=FALSE, seeds=NULL, type = "EoAR",
+                lambdaPriorParams = NULL,
                 vagueSDMultiplier = 100){
+  
+  rjags::load.module("dic", quiet = TRUE)
 
   ## ---- lambdaModel ----
   # Resolve formula for lambda
@@ -334,6 +359,13 @@ eoar <- function(lambda, beta.params, data, offset,
   offset <- as.vector(model.offset(mf))
   ncovars <- ncol(lambda.covars)
   vnames<-dimnames(lambda.covars)[[2]]
+  
+  ## ---- error check on type-covar combination ----
+  if(ncovars > 1 & type != "EoAR") {
+    stop(paste0("The specified 'type' argument is not consistent with the model ", 
+                "formula. \nDid you include covariates for an intercept ",
+                "only model type?"))
+  }
 
   ## ---- initialize ----
   # Make sure one beta dist'n parameter per row
@@ -384,7 +416,6 @@ eoar <- function(lambda, beta.params, data, offset,
   # cat("Prior mean and standard error:\n")
   # cat(paste("mean =", coefMus, "\n"))
   # cat(paste("sd   =", coefTaus, "\n"))
-
   coefTaus <- 1/coefTaus^2
 
 
@@ -399,12 +430,16 @@ eoar <- function(lambda, beta.params, data, offset,
 
 
 	## ---- bayesModelCode ----
-	jagsModel <- "model{
+  if(type == "EoAR") {
+    jagsModel <- "model{
 
 		# Priors
     for(i in 1:ncovars){
       a[i] ~ dnorm( coefMus[i], coefTaus[i] )
     }
+    sigmaLambda ~ dunif(0, 100)
+    tau <- 1/sigmaLambda^2
+
 
     # functional relations
     for(i in 1:nx){
@@ -412,20 +447,99 @@ eoar <- function(lambda, beta.params, data, offset,
         logl[i,j] <- a[j]*lambda.covars[i,j]
       }
       offlink[i] <- exp(offset[i])
-      lambda[i] <- exp(sum(logl[i,]))
+      
+      lambdaMu[i] <- sum(logl[i,])
     }
 
 		# Likelihood
 		for( i in 1:nx ){
 			g[i] ~ dbeta(alpha[i], beta[i])
+			lambdaLog[i] ~ dnorm(lambdaMu[i], tau)
+			lambda[i] <- exp(lambdaLog[i])
 			M[i] ~ dpois(offlink[i]*lambda[i])
-			Y[i] ~ dbin( g[i], M[i] )
+			Y[i] ~ dbin(g[i], M[i])
 		}
 
 		Mtot <- sum(M[])
 
 		}
 	"
+  } 
+  if(type == "NullEoAR") {
+    # update prior specs
+    # coefMus <- 0.7
+    # coefTaus <- 0.03981072
+    coefMus <- lambdaPriorParams[1]
+    coefTaus <- lambdaPriorParams[2]
+    
+    jagsModel <- "model{
+
+		# Priors
+    for(i in 1:ncovars){
+      a[i] ~ dweib(coefMus[i], coefTaus[i])  # informed EoA-style prior
+    }
+    sigmaLambda ~ dunif(0, 100)
+    tau <- 1/sigmaLambda^2
+
+
+    # functional relations
+    for(i in 1:nx){
+      for(j in 1:ncovars){
+        logl[i,j] <- a[j]*lambda.covars[i,j]
+      }
+      offlink[i] <- exp(offset[i])
+      lambdaMu[i] <- log(sum(logl[i,]))
+    }
+
+		# Likelihood
+		for( i in 1:nx ){
+			g[i] ~ dbeta(alpha[i], beta[i])
+			lambdaLog[i] ~ dnorm(lambdaMu[i], tau)
+			lambda[i] <- exp(lambdaLog[i])
+			M[i] ~ dpois(offlink[i]*lambda[i])
+			Y[i] ~ dbin(g[i], M[i])
+		}
+
+		Mtot <- sum(M[])
+
+		}
+	"
+  }
+  
+  if(type == "EoA") {
+    # update prior specs
+    coefMus <- lambdaPriorParams[1]
+    coefTaus <- lambdaPriorParams[2]
+    
+    jagsModel <- "model{
+
+		# Priors
+    for(i in 1:ncovars){
+      a[i] ~ dweib(coefMus[i], coefTaus[i])  # informed EoA-style prior
+    }
+
+    # functional relations
+    for(i in 1:nx){
+      for(j in 1:ncovars){
+        l[i,j] <- a[j]*lambda.covars[i,j]
+      }
+      offlink[i] <- exp(offset[i])
+      lambda[i] <- sum(l[i,])
+    }
+
+		# Likelihood
+		for( i in 1:nx ){
+			g[i] ~ dbeta(alpha[i], beta[i])
+			M[i] ~ dpois(offlink[i]*lambda[i])
+			Y[i] ~ dbin(g[i], M[i])
+		}
+
+		Mtot <- sum(M[])
+
+		}
+	"
+  }
+	
 
 	JAGS.data.0 <- list ( Y = Y,
 													nx = nyrs,
@@ -456,9 +570,9 @@ eoar <- function(lambda, beta.params, data, offset,
   Inits <- function(x,strt,seed){
   		gg <-rbeta(x$nx, x$alpha, x$beta)
   		M <- ceiling(x$Y / gg) + 1
-  		#a <- strt$startA[,"Estimate"] + rnorm(nrow(strt$startA),0,strt$startA[,"Std. Error"])
+  		ys <- unique(x$Y)
   		a <- rep(0,x$ncovars)
-  		a[1] <- log(mean(M))
+  		a[1] <- log(mean(M)) + 1E-10  # to avoid true zero and errors
   		list ( a = a,
   					 M = M,
   					 g=gg,
@@ -472,8 +586,8 @@ eoar <- function(lambda, beta.params, data, offset,
   }
 
 
-  # Parameters to be monitored by WinBUGS
-  params <- c("a", "M", "lambda", "Mtot")
+  # Parameters to be monitored by JAGS
+  params <- c("a", "M", "lambda", "Mtot", "sigmaLambda")
 
 
   ## ---- jagsRun ----
@@ -502,7 +616,24 @@ eoar <- function(lambda, beta.params, data, offset,
   									 n.iter=niters,
   									 thin=nthins,
   									 progress.bar=ifelse(quiet, "none","text"))
-
+  
+  ics <- NULL
+  if(computeIC) {
+    if(!quiet) cat("Computing WAIC and deviance...\n")
+    s <- jags.samples(jags, 
+                      c("deviance", "WAIC"), 
+                      type = "mean", 
+                      n.iter = niters,
+                      thin = nthins,
+                      progress.bar=ifelse(quiet, "none","text")) 
+    s$p_waic <- s$WAIC  # this is actually effective number of parameters
+    s$waic <- s$deviance + s$p_waic  # compute WAIC
+    tmp <- sapply(s, sum)
+    ics <- c(waic = tmp[["waic"]], 
+             p_waic = tmp[["p_waic"]], 
+             deviance = tmp[["deviance"]])
+  } 
+   
   (t2=Sys.time())
   t3 <- t2-t1
   if(!quiet) cat(paste("Execution time:", round(t3,2), attr(t3,"units"), "\n\n"))
@@ -542,6 +673,7 @@ eoar <- function(lambda, beta.params, data, offset,
     list(
     out=out,
     jags.model=jags,
+    infoCrits = ics,
     priors = priors.df,
     seeds=seeds,
     offset=offset,

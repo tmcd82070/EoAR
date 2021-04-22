@@ -16,8 +16,11 @@ eoar(
   nthins = 10,
   nchains = 3,
   nadapt = 3000,
+  computeIC = FALSE,
   quiet = FALSE,
   seeds = NULL,
+  type = "EoAR",
+  lambdaPriorParams = NULL,
   vagueSDMultiplier = 100
 )
 }
@@ -103,6 +106,10 @@ check convergence.}
 burn-in.  During adaptin, JAGS is trying to optimize it's proposal distribution
 and stepsize to increase convergence speed.}
 
+\item{computeIC}{A logical (default = FALSE) indicating whether to compute
+and return information criteria. Currently, WAIC and the deviance of the
+model are returned if \code{computeIC==TRUE}.}
+
 \item{quiet}{Logical indicating whether to print output during estimation.
 \code{quiet==FALSE} shows text based progress bars during estimation.}
 
@@ -114,6 +121,18 @@ that \code{set.seed} has no effect on the random number sequences used
 in JAGS because JAGS is a separate package.
 The seeds, whether chosen by this routine or specified, are
 stored in the output object.}
+
+\item{type}{A character string specifying one of the following: "EoAR" runs
+a standard EoAR analysis with covariates; "NullEoAR" runs an
+intercept-only version of EoAR; "EoA" runs an intercept-only
+version of EoAR with an informed prior and collapsed data (one 
+row of data) to mimic EoA as closely as possible.}
+
+\item{lambdaPriorParams}{A two element vector for the first and second
+parameters of a Weibull distribution. Note the parameters must
+follow the JAGS parameterization of the Weibull. These parameters
+define the prior distribution for lambda when \code{type} = "NullEoAR"
+or "EoA".}
 }
 \value{
 An object of class "eoar".  EoAR objects are lists containing the following components:
@@ -158,6 +177,10 @@ An object of class "eoar".  EoAR objects are lists containing the following comp
   \item \code{jags.model} : a \code{jags.model} object used to estimate the model.
   This object can be used to compute additional convergence and model fit statistics,
   such as DIC (see \code{\link{rjags::dic.samples}}).
+  
+  \item \code{infoCrits} : a named numeric vector containing the WAIC 
+  and the deviance computed for the model. If \code{computeIC==FALSE},
+  then \code{infoCrits} is NULL.
 
   \item \code{priors} : the mean and standard deviation of the normal
   prior distributions for all coefficients. This differs from the input
@@ -209,7 +232,7 @@ An object of class "eoar".  EoAR objects are lists containing the following comp
 }
 }
 \description{
-This routine estimates an EoAR model.  An EoAR model
+An EoAR model
 consists of a log-linear model for lambda, the mean number of search
 targets per "cell", where
 "cell" is a measured experimental unit such as a turbine, season, year, etc.
@@ -217,8 +240,8 @@ Inputs include
 information about the number of targets found (\code{Y}) and the
 g-values (=probatility of
 discovery) at all
-searched sites.  The method is Bayesian and allows either an uniform prior for lambda
-or an informed prior.
+searched sites.  The method is Bayesian and allows either uniform
+or informed priors for lambda.
 Estimation is performed in JAGS.
 }
 \details{
