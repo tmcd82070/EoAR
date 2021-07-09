@@ -1,7 +1,7 @@
 # Evidence of Absence Regression Package
 
 These routines implement Evidence of Absence Regression (EoAR) methods 
-described in McDonald et al. (2021, *Evidence of absence regression: a binomial N-mixture model for estimating  
+described in McDonald et al. (2021, *Evidence of absence regression: a binomial N-mixture model for estimating 
 fatalities at wind energy facilities*, Ecological Applications, In press, URL pending). 
 The **EoAR** method estimates the number of (found + missed) entities after a 
 series of searches by using probability of detection and 
