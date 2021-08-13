@@ -4,7 +4,14 @@
 \alias{PostPredictEoAR}
 \title{Make posterior predictions}
 \usage{
-PostPredictEoAR(object, newdata, newoffset, beta.params = NULL, nyears = 1)
+PostPredictEoAR(
+  object,
+  newdata,
+  newoffset,
+  beta.params = NULL,
+  nyears = 1,
+  meanLambda = FALSE
+)
 }
 \arguments{
 \item{object}{A fitted \code{eoar} object.}
@@ -21,6 +28,10 @@ in which case g is assumed constant over "cells", or one element
 per "cell".}
 
 \item{nyears}{A scalar for the number of years to make predictions for.}
+
+\item{meanLambda}{A logical indicating whether the sample lambda according
+to the estimated lambda standard deviation (FALSE, defualt) or to
+ignore sampling of lambda to predict using the mean expectation (TRUE).}
 }
 \value{
 A list of posterior predictive distributions.

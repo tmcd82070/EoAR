@@ -10,6 +10,9 @@
 #'     in which case g is assumed constant over "cells", or one element 
 #'     per "cell".
 #' @param nyears A scalar for the number of years to make predictions for.
+#' @param meanLambda A logical indicating whether the sample lambda according
+#'     to the estimated lambda standard deviation (FALSE, defualt) or to
+#'     ignore sampling of lambda to predict using the mean expectation (TRUE).  
 #' @return A list of posterior predictive distributions.
 #' @export
 #' @author Andrew Tredennick
@@ -17,10 +20,14 @@ PostPredictEoAR <- function(object,
                             newdata,
                             newoffset, 
                             beta.params = NULL, 
-                            nyears = 1) {
+                            nyears = 1,
+                            meanLambda = FALSE) {
   X <- model.matrix(object, newdata)
   betaMat <- t(as.matrix(object$out[,object$coef.labels]))
   sigmaVec <- as.numeric(as.matrix(object$out[,"sigmaLambda"]))
+  if(meanLambda == TRUE) {
+    sigmaVec[] <- 0
+  }
   
   n <- nrow(X)
   k <- ncol(betaMat)
